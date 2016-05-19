@@ -1,0 +1,136 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>gsTiles.simple &mdash; gsTiles 0.0.1 documentation</title>
+    
+    <link rel="stylesheet" href="../../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../',
+        VERSION:     '0.0.1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <link rel="top" title="gsTiles 0.0.1 documentation" href="../../index.html" />
+    <link rel="up" title="Module code" href="../index.html" />
+   
+  <link rel="stylesheet" href="../../_static/custom.css" type="text/css" />
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head>
+  <body role="document">
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for gsTiles.simple</h1><div class="highlight"><pre>
+<span></span><span class="kn">from</span> <span class="nn">npShp.shpReader</span> <span class="kn">import</span> <span class="n">shapeFile</span>
+<span class="kn">import</span> <span class="nn">numpy</span>
+
+<span class="n">SPHEREMERC_GROUND_SIZE</span> <span class="o">=</span> <span class="p">(</span><span class="mf">20037508.34</span><span class="o">*</span><span class="mi">2</span><span class="p">)</span>
+<span class="n">WIDTH</span><span class="o">=</span><span class="mi">256</span>
+<span class="n">HEIGHT</span><span class="o">=</span><span class="mi">256</span>
+
+<div class="viewcode-block" id="simplering"><a class="viewcode-back" href="../../api/gsTiles.simple.html#gsTiles.simple.simplering">[docs]</a><span class="k">def</span> <span class="nf">simplering</span><span class="p">(</span><span class="n">ring</span><span class="p">,</span> <span class="n">zoom</span><span class="p">):</span>
+    <span class="n">numtiles</span> <span class="o">=</span> <span class="mi">2</span><span class="o">**</span><span class="n">zoom</span>
+    <span class="c1">#scale to number of pixels in the current zoom</span>
+    <span class="n">ring</span> <span class="o">=</span> <span class="p">(</span><span class="n">ring</span> <span class="o">/</span> <span class="n">SPHEREMERC_GROUND_SIZE</span><span class="p">)</span> <span class="o">*</span> <span class="p">(</span><span class="n">numtiles</span><span class="o">*</span><span class="mf">256.</span><span class="p">)</span>
+    <span class="c1">#To Round or Floor?</span>
+    <span class="n">ring</span> <span class="o">=</span> <span class="n">ring</span><span class="o">.</span><span class="n">round</span><span class="p">()</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">int</span><span class="p">)</span>
+
+    <span class="c1"># Remove Duplicate Points, as they will be marked as collinear</span>
+    <span class="c1"># even if they are needed.</span>
+    <span class="n">ring</span> <span class="o">=</span> <span class="n">ring</span><span class="p">[</span><span class="n">numpy</span><span class="o">.</span><span class="n">hstack</span><span class="p">(((</span><span class="n">ring</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">!=</span> <span class="n">ring</span><span class="p">[</span><span class="mi">1</span><span class="p">:])</span><span class="o">.</span><span class="n">any</span><span class="p">(</span><span class="mi">1</span><span class="p">),</span> <span class="p">[</span><span class="bp">True</span><span class="p">]))]</span>
+    <span class="k">if</span> <span class="n">ring</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">&lt;</span> <span class="mi">3</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">ring</span>
+
+    <span class="c1"># Find and remove Collinear Points</span>
+    <span class="n">a</span> <span class="o">=</span> <span class="n">ring</span><span class="p">[:</span><span class="o">-</span><span class="mi">2</span><span class="p">]</span>
+    <span class="n">b</span> <span class="o">=</span> <span class="n">ring</span><span class="p">[</span><span class="mi">1</span><span class="p">:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+    <span class="n">c</span> <span class="o">=</span> <span class="n">ring</span><span class="p">[</span><span class="mi">2</span><span class="p">:]</span>
+    <span class="n">ring</span> <span class="o">=</span> <span class="n">ring</span><span class="p">[</span><span class="n">numpy</span><span class="o">.</span><span class="n">hstack</span><span class="p">(([</span><span class="bp">True</span><span class="p">],</span> <span class="n">numpy</span><span class="o">.</span><span class="n">cross</span><span class="p">(</span><span class="n">a</span><span class="o">-</span><span class="n">b</span><span class="p">,</span><span class="n">c</span><span class="o">-</span><span class="n">b</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">,</span> <span class="p">[</span><span class="bp">True</span><span class="p">]))]</span>
+
+    <span class="c1"># Scale back to original coodirnate system.</span>
+    <span class="n">ring</span> <span class="o">=</span> <span class="p">(</span><span class="n">ring</span> <span class="o">/</span> <span class="p">(</span><span class="n">numtiles</span><span class="o">*</span><span class="mf">256.</span><span class="p">))</span> <span class="o">*</span> <span class="n">SPHEREMERC_GROUND_SIZE</span>
+    <span class="k">return</span> <span class="n">ring</span></div>
+<div class="viewcode-block" id="simple"><a class="viewcode-back" href="../../api/gsTiles.simple.html#gsTiles.simple.simple">[docs]</a><span class="k">def</span> <span class="nf">simple</span><span class="p">(</span><span class="n">poly</span><span class="p">,</span> <span class="n">zoom</span><span class="p">):</span>
+    <span class="k">return</span> <span class="p">[</span><span class="n">simplering</span><span class="p">(</span><span class="n">ring</span><span class="p">,</span> <span class="n">zoom</span><span class="p">)</span> <span class="k">for</span> <span class="n">ring</span> <span class="ow">in</span> <span class="n">poly</span><span class="p">]</span></div>
+    <span class="c1">#return [r for r in poly if r.shape[0] &gt; 2]</span>
+
+
+<span class="k">if</span> <span class="n">__name__</span> <span class="o">==</span> <span class="s1">&#39;__main__&#39;</span><span class="p">:</span>
+    <span class="c1">#shp = &#39;/Users/charlie/Documents/data/usa/usa.gmerc.shp&#39;</span>
+    <span class="n">shp</span> <span class="o">=</span> <span class="s1">&#39;/Users/charlie/Documents/data/blkgrps/blkgrps.gmerc.shp&#39;</span>
+    <span class="n">s</span> <span class="o">=</span> <span class="n">shapeFile</span><span class="p">(</span><span class="n">shp</span><span class="p">)</span>
+    <span class="c1">#z0 = [simple(poly, 9) for poly in s.shapes()]</span>
+
+    <span class="kn">import</span> <span class="nn">pysal</span>
+    <span class="n">out</span> <span class="o">=</span> <span class="n">pysal</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="n">shp</span><span class="p">[:</span><span class="o">-</span><span class="mi">4</span><span class="p">]</span><span class="o">+</span><span class="s1">&#39;_z20.shp&#39;</span><span class="p">,</span><span class="s1">&#39;w&#39;</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">poly</span> <span class="ow">in</span> <span class="n">s</span><span class="o">.</span><span class="n">shapes</span><span class="p">():</span>
+        <span class="n">poly</span> <span class="o">=</span> <span class="n">simple</span><span class="p">(</span><span class="n">poly</span><span class="p">,</span> <span class="mi">20</span><span class="p">)</span>
+        <span class="n">ctest</span> <span class="o">=</span> <span class="nb">map</span><span class="p">(</span><span class="n">pysal</span><span class="o">.</span><span class="n">cg</span><span class="o">.</span><span class="n">is_clockwise</span><span class="p">,</span> <span class="n">poly</span><span class="p">)</span>
+        <span class="n">ctest</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="bp">True</span>
+        <span class="n">p</span> <span class="o">=</span> <span class="n">pysal</span><span class="o">.</span><span class="n">cg</span><span class="o">.</span><span class="n">Polygon</span><span class="p">([</span><span class="n">r</span> <span class="k">for</span> <span class="n">r</span><span class="p">,</span><span class="n">c</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">poly</span><span class="p">,</span><span class="n">ctest</span><span class="p">)</span> <span class="k">if</span> <span class="n">c</span><span class="p">],</span> <span class="p">[</span><span class="n">r</span> <span class="k">for</span> <span class="n">r</span><span class="p">,</span><span class="n">c</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">poly</span><span class="p">,</span><span class="n">ctest</span><span class="p">)</span> <span class="k">if</span> <span class="ow">not</span> <span class="n">c</span><span class="p">])</span>
+        <span class="n">out</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">p</span><span class="p">)</span>
+    <span class="n">out</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+        
+
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper"><div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../index.html">Documentation overview</a><ul>
+  <li><a href="../index.html">Module code</a><ul>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2016, Charles R Schmidt.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.4.1</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.8</a>
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>

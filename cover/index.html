@@ -1,0 +1,239 @@
+
+
+
+<!DOCTYPE html>
+<html>
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+    <title>Coverage report</title>
+    <link rel="stylesheet" href="style.css" type="text/css">
+    
+    <script type="text/javascript" src="jquery.min.js"></script>
+    <script type="text/javascript" src="jquery.debounce.min.js"></script>
+    <script type="text/javascript" src="jquery.tablesorter.min.js"></script>
+    <script type="text/javascript" src="jquery.hotkeys.js"></script>
+    <script type="text/javascript" src="coverage_html.js"></script>
+    <script type="text/javascript">
+        jQuery(document).ready(coverage.index_ready);
+    </script>
+</head>
+<body class="indexfile">
+
+<div id="header">
+    <div class="content">
+        <h1>Coverage report:
+            <span class="pc_cov">34%</span>
+        </h1>
+
+        <img id="keyboard_icon" src="keybd_closed.png" alt="Show keyboard shortcuts" />
+
+        <form id="filter_container">
+            <input id="filter" type="text" value="" placeholder="filter..." />
+        </form>
+    </div>
+</div>
+
+<div class="help_panel">
+    <img id="panel_icon" src="keybd_open.png" alt="Hide keyboard shortcuts" />
+    <p class="legend">Hot-keys on this page</p>
+    <div>
+    <p class="keyhelp">
+        <span class="key">n</span>
+        <span class="key">s</span>
+        <span class="key">m</span>
+        <span class="key">x</span>
+        
+        <span class="key">c</span> &nbsp; change column sorting
+    </p>
+    </div>
+</div>
+
+<div id="index">
+    <table class="index">
+        <thead>
+            
+            <tr class="tablehead" title="Click to sort">
+                <th class="name left headerSortDown shortkey_n">Module</th>
+                <th class="shortkey_s">statements</th>
+                <th class="shortkey_m">missing</th>
+                <th class="shortkey_x">excluded</th>
+                
+                <th class="right shortkey_c">coverage</th>
+            </tr>
+        </thead>
+        
+        <tfoot>
+            <tr class="total">
+                <td class="name left">Total</td>
+                <td>779</td>
+                <td>511</td>
+                <td>0</td>
+                
+                <td class="right" data-ratio="268 779">34%</td>
+            </tr>
+        </tfoot>
+        <tbody>
+            
+            <tr class="file">
+                <td class="name left"><a href="gsTiles_py.html">gsTiles.py</a></td>
+                <td>0</td>
+                <td>0</td>
+                <td>0</td>
+                
+                <td class="right" data-ratio="0 0">100%</td>
+            </tr>
+            
+            <tr class="file">
+                <td class="name left"><a href="gsTiles_locator_py.html">gsTiles/locator.py</a></td>
+                <td>37</td>
+                <td>28</td>
+                <td>0</td>
+                
+                <td class="right" data-ratio="9 37">24%</td>
+            </tr>
+            
+            <tr class="file">
+                <td class="name left"><a href="gsTiles_npShp_py.html">gsTiles/npShp.py</a></td>
+                <td>0</td>
+                <td>0</td>
+                <td>0</td>
+                
+                <td class="right" data-ratio="0 0">100%</td>
+            </tr>
+            
+            <tr class="file">
+                <td class="name left"><a href="gsTiles_npShp_shpReader_py.html">gsTiles/npShp/shpReader.py</a></td>
+                <td>161</td>
+                <td>73</td>
+                <td>0</td>
+                
+                <td class="right" data-ratio="88 161">55%</td>
+            </tr>
+            
+            <tr class="file">
+                <td class="name left"><a href="gsTiles_npShp_test_py.html">gsTiles/npShp/test.py</a></td>
+                <td>35</td>
+                <td>23</td>
+                <td>0</td>
+                
+                <td class="right" data-ratio="12 35">34%</td>
+            </tr>
+            
+            <tr class="file">
+                <td class="name left"><a href="gsTiles_npShp_testSeek_py.html">gsTiles/npShp/testSeek.py</a></td>
+                <td>44</td>
+                <td>34</td>
+                <td>0</td>
+                
+                <td class="right" data-ratio="10 44">23%</td>
+            </tr>
+            
+            <tr class="file">
+                <td class="name left"><a href="gsTiles_npShp_test_cent_py.html">gsTiles/npShp/test_cent.py</a></td>
+                <td>49</td>
+                <td>28</td>
+                <td>0</td>
+                
+                <td class="right" data-ratio="21 49">43%</td>
+            </tr>
+            
+            <tr class="file">
+                <td class="name left"><a href="gsTiles_optTile_py.html">gsTiles/optTile.py</a></td>
+                <td>74</td>
+                <td>41</td>
+                <td>0</td>
+                
+                <td class="right" data-ratio="33 74">45%</td>
+            </tr>
+            
+            <tr class="file">
+                <td class="name left"><a href="gsTiles_preRender_py.html">gsTiles/preRender.py</a></td>
+                <td>67</td>
+                <td>52</td>
+                <td>0</td>
+                
+                <td class="right" data-ratio="15 67">22%</td>
+            </tr>
+            
+            <tr class="file">
+                <td class="name left"><a href="gsTiles_serveTiles_py.html">gsTiles/serveTiles.py</a></td>
+                <td>65</td>
+                <td>46</td>
+                <td>0</td>
+                
+                <td class="right" data-ratio="19 65">29%</td>
+            </tr>
+            
+            <tr class="file">
+                <td class="name left"><a href="gsTiles_simple_py.html">gsTiles/simple.py</a></td>
+                <td>32</td>
+                <td>24</td>
+                <td>0</td>
+                
+                <td class="right" data-ratio="8 32">25%</td>
+            </tr>
+            
+            <tr class="file">
+                <td class="name left"><a href="gsTiles_test_Id2color_py.html">gsTiles/test_Id2color.py</a></td>
+                <td>20</td>
+                <td>14</td>
+                <td>0</td>
+                
+                <td class="right" data-ratio="6 20">30%</td>
+            </tr>
+            
+            <tr class="file">
+                <td class="name left"><a href="gsTiles_tileDB_py.html">gsTiles/tileDB.py</a></td>
+                <td>100</td>
+                <td>77</td>
+                <td>0</td>
+                
+                <td class="right" data-ratio="23 100">23%</td>
+            </tr>
+            
+            <tr class="file">
+                <td class="name left"><a href="gsTiles_tileMaker_py.html">gsTiles/tileMaker.py</a></td>
+                <td>89</td>
+                <td>71</td>
+                <td>0</td>
+                
+                <td class="right" data-ratio="18 89">20%</td>
+            </tr>
+            
+            <tr class="file">
+                <td class="name left"><a href="tests_py.html">tests.py</a></td>
+                <td>0</td>
+                <td>0</td>
+                <td>0</td>
+                
+                <td class="right" data-ratio="0 0">100%</td>
+            </tr>
+            
+            <tr class="file">
+                <td class="name left"><a href="tests_test_gsTiles_py.html">tests/test_gsTiles.py</a></td>
+                <td>6</td>
+                <td>0</td>
+                <td>0</td>
+                
+                <td class="right" data-ratio="6 6">100%</td>
+            </tr>
+            
+        </tbody>
+    </table>
+
+    <p id="no_rows">
+        No items found using the specified filter.
+    </p>
+</div>
+
+<div id="footer">
+    <div class="content">
+        <p>
+            <a class="nav" href="https://coverage.readthedocs.org">coverage.py v4.0.3</a>,
+            created at 2016-05-19 12:57
+        </p>
+    </div>
+</div>
+
+</body>
+</html>

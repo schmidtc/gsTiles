@@ -1,0 +1,133 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>gsTiles.npShp.test &mdash; gsTiles 0.0.1 documentation</title>
+    
+    <link rel="stylesheet" href="../../../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../../',
+        VERSION:     '0.0.1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../../_static/doctools.js"></script>
+    <link rel="top" title="gsTiles 0.0.1 documentation" href="../../../index.html" />
+    <link rel="up" title="Module code" href="../../index.html" />
+   
+  <link rel="stylesheet" href="../../../_static/custom.css" type="text/css" />
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head>
+  <body role="document">
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for gsTiles.npShp.test</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span> <span class="nn">time</span>
+<span class="kn">from</span> <span class="nn">pysal.core.util.shapefile</span> <span class="kn">import</span> <span class="n">shp_file</span>
+<span class="kn">from</span> <span class="nn">shpReader</span> <span class="kn">import</span> <span class="n">shapeFile</span>
+<span class="kn">import</span> <span class="nn">pysal</span>
+
+<span class="c1">#shp = &#39;/Users/charlie/Documents/data/Seattle/parcel2000_city_resbldg99clean.shp&#39;</span>
+<span class="n">shp</span> <span class="o">=</span> <span class="s1">&#39;/Users/charlie/Documents/data/blkgrps/blkgrps.gmerc.shp&#39;</span>
+
+<div class="viewcode-block" id="timeit"><a class="viewcode-back" href="../../../api/gsTiles.npShp.test.html#gsTiles.npShp.test.timeit">[docs]</a><span class="k">def</span> <span class="nf">timeit</span><span class="p">(</span><span class="n">func</span><span class="p">):</span>
+    <span class="n">t0</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
+    <span class="n">ret</span> <span class="o">=</span> <span class="n">func</span><span class="p">()</span>
+    <span class="n">t1</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
+    <span class="k">print</span> <span class="n">func</span><span class="o">.</span><span class="n">__name__</span><span class="p">,</span> <span class="n">t1</span><span class="o">-</span><span class="n">t0</span><span class="p">,</span> <span class="p">(</span><span class="n">t1</span><span class="o">-</span><span class="n">t0</span><span class="p">)</span><span class="o">*</span><span class="mi">1000</span> <span class="o">/</span> <span class="mf">166941.</span></div>
+
+<div class="viewcode-block" id="baseline"><a class="viewcode-back" href="../../../api/gsTiles.npShp.test.html#gsTiles.npShp.test.baseline">[docs]</a><span class="k">def</span> <span class="nf">baseline</span><span class="p">():</span>
+    <span class="n">f</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="n">shp</span><span class="p">,</span><span class="s1">&#39;rb&#39;</span><span class="p">)</span>
+    <span class="n">dat</span> <span class="o">=</span> <span class="n">f</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="mi">1024</span><span class="p">)</span>
+    <span class="k">while</span> <span class="n">dat</span><span class="p">:</span>
+        <span class="n">dat</span> <span class="o">=</span> <span class="n">f</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="mi">1024</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="npShape"><a class="viewcode-back" href="../../../api/gsTiles.npShp.test.html#gsTiles.npShp.test.npShape">[docs]</a><span class="k">def</span> <span class="nf">npShape</span><span class="p">():</span>
+    <span class="n">f</span> <span class="o">=</span> <span class="n">shapeFile</span><span class="p">(</span><span class="n">shp</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">record</span> <span class="ow">in</span> <span class="n">f</span><span class="o">.</span><span class="n">shapes</span><span class="p">():</span>
+        <span class="k">pass</span></div>
+
+<div class="viewcode-block" id="pythonShape"><a class="viewcode-back" href="../../../api/gsTiles.npShp.test.html#gsTiles.npShp.test.pythonShape">[docs]</a><span class="k">def</span> <span class="nf">pythonShape</span><span class="p">():</span>
+    <span class="n">f</span> <span class="o">=</span> <span class="n">shp_file</span><span class="p">(</span><span class="n">shp</span><span class="p">,</span><span class="s1">&#39;r&#39;</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">record</span> <span class="ow">in</span> <span class="n">f</span><span class="p">:</span>
+        <span class="k">pass</span></div>
+
+<div class="viewcode-block" id="pysalShape"><a class="viewcode-back" href="../../../api/gsTiles.npShp.test.html#gsTiles.npShp.test.pysalShape">[docs]</a><span class="k">def</span> <span class="nf">pysalShape</span><span class="p">():</span>
+    <span class="n">f</span> <span class="o">=</span> <span class="n">pysal</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="n">shp</span><span class="p">,</span><span class="s1">&#39;r&#39;</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">record</span> <span class="ow">in</span> <span class="n">f</span><span class="p">:</span>
+        <span class="k">pass</span></div>
+<div class="viewcode-block" id="pysalDBF"><a class="viewcode-back" href="../../../api/gsTiles.npShp.test.html#gsTiles.npShp.test.pysalDBF">[docs]</a><span class="k">def</span> <span class="nf">pysalDBF</span><span class="p">():</span>
+    <span class="n">f</span> <span class="o">=</span> <span class="n">pysal</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="n">shp</span><span class="p">[:</span><span class="o">-</span><span class="mi">3</span><span class="p">]</span><span class="o">+</span><span class="s1">&#39;dbf&#39;</span><span class="p">,</span><span class="s1">&#39;r&#39;</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">record</span> <span class="ow">in</span> <span class="n">f</span><span class="p">:</span>
+        <span class="k">pass</span></div>
+
+
+
+<span class="k">if</span> <span class="n">__name__</span><span class="o">==</span><span class="s1">&#39;__main__&#39;</span><span class="p">:</span>
+    <span class="n">timeit</span><span class="p">(</span><span class="n">baseline</span><span class="p">)</span>
+    <span class="n">timeit</span><span class="p">(</span><span class="n">baseline</span><span class="p">)</span>
+    <span class="n">timeit</span><span class="p">(</span><span class="n">npShape</span><span class="p">)</span>
+    <span class="c1">#timeit(pythonShape)</span>
+    <span class="c1">#timeit(pysalShape)</span>
+    <span class="c1">#timeit(pysalDBF)</span>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper"><div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../../index.html">Documentation overview</a><ul>
+  <li><a href="../../index.html">Module code</a><ul>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="../../../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2016, Charles R Schmidt.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.4.1</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.8</a>
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>

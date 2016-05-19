@@ -1,0 +1,229 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>gsTiles.npShp.shpReader module &mdash; gsTiles 0.0.1 documentation</title>
+    
+    <link rel="stylesheet" href="../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../',
+        VERSION:     '0.0.1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <link rel="top" title="gsTiles 0.0.1 documentation" href="../index.html" />
+    <link rel="up" title="gsTiles.npShp package" href="gsTiles.npShp.html" />
+    <link rel="next" title="gsTiles.npShp.test module" href="gsTiles.npShp.test.html" />
+    <link rel="prev" title="gsTiles.npShp package" href="gsTiles.npShp.html" />
+   
+  <link rel="stylesheet" href="../_static/custom.css" type="text/css" />
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head>
+  <body role="document">
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="module-gsTiles.npShp.shpReader">
+<span id="gstiles-npshp-shpreader-module"></span><h1>gsTiles.npShp.shpReader module<a class="headerlink" href="#module-gsTiles.npShp.shpReader" title="Permalink to this headline">¶</a></h1>
+<p>A Numpy Python ShapeFile Reader and Writer</p>
+<p>Contact:
+Charles Schmidt</p>
+<dl class="function">
+<dt id="gsTiles.npShp.shpReader.i2s">
+<code class="descclassname">gsTiles.npShp.shpReader.</code><code class="descname">i2s</code><span class="sig-paren">(</span><em>i</em><span class="sig-paren">)</span><a class="headerlink" href="#gsTiles.npShp.shpReader.i2s" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="gsTiles.npShp.shpReader.mean_pt">
+<code class="descclassname">gsTiles.npShp.shpReader.</code><code class="descname">mean_pt</code><span class="sig-paren">(</span><em>ring</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/gsTiles/npShp/shpReader.html#mean_pt"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#gsTiles.npShp.shpReader.mean_pt" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="gsTiles.npShp.shpReader.point_in_polygon">
+<code class="descclassname">gsTiles.npShp.shpReader.</code><code class="descname">point_in_polygon</code><span class="sig-paren">(</span><em>pt</em>, <em>poly</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/gsTiles/npShp/shpReader.html#point_in_polygon"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#gsTiles.npShp.shpReader.point_in_polygon" title="Permalink to this definition">¶</a></dt>
+<dd><p>Example:
+&gt;&gt;&gt; part = numpy.array([(10,10), (10,-10), (-10,-10), (-10,10), (10,10)])
+&gt;&gt;&gt; hole = numpy.array([(1,1), (-1,1), (-1,-1), (1,-1), (1,1)])
+&gt;&gt;&gt; poly = [part, hole]
+&gt;&gt;&gt; pt = numpy.array([(0,0)])
+&gt;&gt;&gt; point_in_polygon(pt, poly)
+False
+&gt;&gt;&gt; pt = numpy.array([(5,5)])
+&gt;&gt;&gt; point_in_polygon(pt, poly)
+True</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="gsTiles.npShp.shpReader.point_in_ring">
+<code class="descclassname">gsTiles.npShp.shpReader.</code><code class="descname">point_in_ring</code><span class="sig-paren">(</span><em>pt</em>, <em>ring</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/gsTiles/npShp/shpReader.html#point_in_ring"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#gsTiles.npShp.shpReader.point_in_ring" title="Permalink to this definition">¶</a></dt>
+<dd><p>pt = numpy.ndarray (2,1)
+ring = numpy.ndarray (2, n)</p>
+<p>REF: <a class="reference external" href="http://www.engr.colostate.edu/~dga/dga/papers/point_in_polygon.pdf">http://www.engr.colostate.edu/~dga/dga/papers/point_in_polygon.pdf</a></p>
+<dl class="docutils">
+<dt>returns w -&gt; {-n, 0, +n}</dt>
+<dd>0 : pt is not in ring
++n: ring winds around pt n times in the counterclockwise direction
+-n: ring winds around pt n times in the clockwise direction</dd>
+</dl>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">ring</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">array</span><span class="p">([(</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">),</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="o">-</span><span class="mi">1</span><span class="p">),</span> <span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span><span class="o">-</span><span class="mi">1</span><span class="p">),</span> <span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">),</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">)])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">pt</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">array</span><span class="p">([(</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">)])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">point_in_ring2</span><span class="p">(</span><span class="n">pt</span><span class="p">,</span> <span class="n">ring</span><span class="p">)</span>
+<span class="go">-1</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">ring</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">array</span><span class="p">([(</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">),</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="o">-</span><span class="mi">1</span><span class="p">),</span> <span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span><span class="o">-</span><span class="mi">1</span><span class="p">),</span> <span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">),</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">)][::</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">point_in_ring2</span><span class="p">(</span><span class="n">pt</span><span class="p">,</span> <span class="n">ring</span><span class="p">)</span>
+<span class="go">1</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">ring</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">array</span><span class="p">([(</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">),</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="mi">0</span><span class="p">),(</span><span class="mi">1</span><span class="p">,</span><span class="o">-</span><span class="mi">1</span><span class="p">),</span> <span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span><span class="o">-</span><span class="mi">1</span><span class="p">),</span> <span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">),</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">)])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">point_in_ring2</span><span class="p">(</span><span class="n">pt</span><span class="p">,</span> <span class="n">ring</span><span class="p">)</span>
+<span class="go">-1.0</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">ring</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">array</span><span class="p">([(</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">),</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="mi">0</span><span class="p">),</span> <span class="p">(</span><span class="mi">2</span><span class="p">,</span><span class="mi">0</span><span class="p">),(</span><span class="mi">1</span><span class="p">,</span><span class="o">-</span><span class="mi">1</span><span class="p">),</span> <span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span><span class="o">-</span><span class="mi">1</span><span class="p">),</span> <span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">),</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">)])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">point_in_ring2</span><span class="p">(</span><span class="n">pt</span><span class="p">,</span> <span class="n">ring</span><span class="p">)</span>
+<span class="go">-1.0</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="function">
+<dt id="gsTiles.npShp.shpReader.point_in_ring2">
+<code class="descclassname">gsTiles.npShp.shpReader.</code><code class="descname">point_in_ring2</code><span class="sig-paren">(</span><em>pt</em>, <em>ring</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/gsTiles/npShp/shpReader.html#point_in_ring2"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#gsTiles.npShp.shpReader.point_in_ring2" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="class">
+<dt id="gsTiles.npShp.shpReader.shapeFile">
+<em class="property">class </em><code class="descclassname">gsTiles.npShp.shpReader.</code><code class="descname">shapeFile</code><span class="sig-paren">(</span><em>filename</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/gsTiles/npShp/shpReader.html#shapeFile"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#gsTiles.npShp.shpReader.shapeFile" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">object</span></code></p>
+<dl class="method">
+<dt id="gsTiles.npShp.shpReader.shapeFile.allboxes">
+<code class="descname">allboxes</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/gsTiles/npShp/shpReader.html#shapeFile.allboxes"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#gsTiles.npShp.shpReader.shapeFile.allboxes" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="gsTiles.npShp.shpReader.shapeFile.bbox">
+<code class="descname">bbox</code><a class="headerlink" href="#gsTiles.npShp.shpReader.shapeFile.bbox" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="gsTiles.npShp.shpReader.shapeFile.bbox_centroid">
+<code class="descname">bbox_centroid</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/gsTiles/npShp/shpReader.html#shapeFile.bbox_centroid"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#gsTiles.npShp.shpReader.shapeFile.bbox_centroid" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="gsTiles.npShp.shpReader.shapeFile.boxes">
+<code class="descname">boxes</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/gsTiles/npShp/shpReader.html#shapeFile.boxes"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#gsTiles.npShp.shpReader.shapeFile.boxes" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="gsTiles.npShp.shpReader.shapeFile.clone">
+<code class="descname">clone</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/gsTiles/npShp/shpReader.html#shapeFile.clone"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#gsTiles.npShp.shpReader.shapeFile.clone" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="gsTiles.npShp.shpReader.shapeFile.get">
+<code class="descname">get</code><span class="sig-paren">(</span><em>oid</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/gsTiles/npShp/shpReader.html#shapeFile.get"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#gsTiles.npShp.shpReader.shapeFile.get" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="gsTiles.npShp.shpReader.shapeFile.n">
+<code class="descname">n</code><a class="headerlink" href="#gsTiles.npShp.shpReader.shapeFile.n" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="gsTiles.npShp.shpReader.shapeFile.polyIndex">
+<code class="descname">polyIndex</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/gsTiles/npShp/shpReader.html#shapeFile.polyIndex"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#gsTiles.npShp.shpReader.shapeFile.polyIndex" title="Permalink to this definition">¶</a></dt>
+<dd><p>Much fast to read this uniform strucuted data in one shot.
+Uses more memory, but worth the speed up.
+Memory in bytes is n * 44.</p>
+<p>1million polygons ~ 40mb</p>
+<dl class="docutils">
+<dt>index fields:</dt>
+<dd>Shape Type - int (4 bytes)
+bbox - floats (32) - [minx, miny, maxx, maxy]
+NumParts - int (4)
+NumPoints - int (4)</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="gsTiles.npShp.shpReader.shapeFile.shapes">
+<code class="descname">shapes</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/gsTiles/npShp/shpReader.html#shapeFile.shapes"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#gsTiles.npShp.shpReader.shapeFile.shapes" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper"><div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../index.html">Documentation overview</a><ul>
+  <li><a href="modules.html">gsTiles</a><ul>
+  <li><a href="gsTiles.html">gsTiles package</a><ul>
+  <li><a href="gsTiles.npShp.html">gsTiles.npShp package</a><ul>
+      <li>Previous: <a href="gsTiles.npShp.html" title="previous chapter">gsTiles.npShp package</a></li>
+      <li>Next: <a href="gsTiles.npShp.test.html" title="next chapter">gsTiles.npShp.test module</a></li>
+  </ul></li>
+  </ul></li>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../_sources/api/gsTiles.npShp.shpReader.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2016, Charles R Schmidt.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.4.1</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.8</a>
+      
+      |
+      <a href="../_sources/api/gsTiles.npShp.shpReader.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>

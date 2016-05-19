@@ -1,0 +1,169 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>gsTiles.npShp.test_cent &mdash; gsTiles 0.0.1 documentation</title>
+    
+    <link rel="stylesheet" href="../../../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../../',
+        VERSION:     '0.0.1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../../_static/doctools.js"></script>
+    <link rel="top" title="gsTiles 0.0.1 documentation" href="../../../index.html" />
+    <link rel="up" title="Module code" href="../../index.html" />
+   
+  <link rel="stylesheet" href="../../../_static/custom.css" type="text/css" />
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head>
+  <body role="document">
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for gsTiles.npShp.test_cent</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span> <span class="nn">time</span>
+<span class="kn">from</span> <span class="nn">pysal.core.util.shapefile</span> <span class="kn">import</span> <span class="n">shp_file</span>
+<span class="kn">from</span> <span class="nn">shpReader</span> <span class="kn">import</span> <span class="n">shapeFile</span><span class="p">,</span> <span class="n">point_in_polygon</span>
+<span class="kn">import</span> <span class="nn">numpy</span>
+<span class="kn">import</span> <span class="nn">pysal</span>
+
+<span class="c1">#shp = &#39;/Users/charlie/Documents/data/Seattle/parcel2000_city_resbldg99clean.shp&#39;</span>
+<span class="c1">#shp = &#39;/Users/charlie/Documents/data/blkgrps/blkgrps.gmerc.shp&#39;</span>
+<span class="c1">#shp = &#39;/Users/charlie/Documents/data/stl_hom/stl_hom.shp&#39;</span>
+<span class="n">shp</span> <span class="o">=</span> <span class="s1">&#39;/Users/charlie/Documents/data/usa/usa.gmerc.shp&#39;</span>
+<span class="n">s</span> <span class="o">=</span> <span class="n">shapeFile</span><span class="p">(</span><span class="n">shp</span><span class="p">)</span>
+<span class="n">boxes</span> <span class="o">=</span> <span class="n">s</span><span class="o">.</span><span class="n">allboxes</span><span class="p">()</span>
+<span class="n">pts</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">boxes</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="mi">2</span><span class="p">))</span>
+<span class="n">pts</span><span class="p">[:,</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="n">boxes</span><span class="p">[:,</span><span class="mi">2</span><span class="p">]</span><span class="o">+</span><span class="n">boxes</span><span class="p">[:,</span><span class="mi">0</span><span class="p">]</span>
+<span class="n">pts</span><span class="p">[:,</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">boxes</span><span class="p">[:,</span><span class="mi">3</span><span class="p">]</span><span class="o">+</span><span class="n">boxes</span><span class="p">[:,</span><span class="mi">1</span><span class="p">]</span>
+<span class="n">pts</span> <span class="o">=</span> <span class="n">pts</span> <span class="o">*</span> <span class="mf">0.5</span>
+<span class="n">polys</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">s</span><span class="o">.</span><span class="n">shapes</span><span class="p">())</span>
+
+<span class="n">f</span> <span class="o">=</span> <span class="n">pysal</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="n">shp</span><span class="p">,</span><span class="s1">&#39;r&#39;</span><span class="p">)</span>
+<span class="n">polys2</span> <span class="o">=</span> <span class="n">f</span><span class="o">.</span><span class="n">read</span><span class="p">()</span>
+<span class="n">pts2</span> <span class="o">=</span> <span class="n">pts</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span>
+
+<div class="viewcode-block" id="profileit"><a class="viewcode-back" href="../../../api/gsTiles.npShp.test_cent.html#gsTiles.npShp.test_cent.profileit">[docs]</a><span class="k">def</span> <span class="nf">profileit</span><span class="p">(</span><span class="n">log_file</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">sortby</span><span class="o">=</span><span class="s1">&#39;time&#39;</span><span class="p">,</span> <span class="n">callers</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span> <span class="n">callees</span><span class="o">=</span><span class="bp">False</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    See: http://stackoverflow.com/questions/5375624/a-decorator-that-profiles-a-method-call-and-logs    -the-profiling-result</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="nf">_profiler</span><span class="p">(</span><span class="n">func</span><span class="p">):</span>
+        <span class="k">def</span> <span class="nf">_wrapper</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+            <span class="kn">import</span> <span class="nn">cProfile</span><span class="o">,</span> <span class="nn">pstats</span><span class="o">,</span> <span class="nn">time</span><span class="o">,</span> <span class="nn">sys</span>
+            <span class="n">prof</span> <span class="o">=</span> <span class="n">cProfile</span><span class="o">.</span><span class="n">Profile</span><span class="p">()</span>
+            <span class="n">retval</span> <span class="o">=</span> <span class="n">prof</span><span class="o">.</span><span class="n">runcall</span><span class="p">(</span><span class="n">func</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+            <span class="n">stats</span> <span class="o">=</span> <span class="n">pstats</span><span class="o">.</span><span class="n">Stats</span><span class="p">(</span><span class="n">prof</span><span class="p">)</span>
+            <span class="c1">#&quot;calls&quot;     : &quot;call count&quot;</span>
+            <span class="c1">#&quot;cumulative&quot;: &quot;cumulative time&quot;</span>
+            <span class="c1">#&quot;file&quot;      : &quot;file name&quot;</span>
+            <span class="c1">#&quot;line&quot;      : &quot;line number&quot;</span>
+            <span class="c1">#&quot;module&quot;    : &quot;file name&quot;</span>
+            <span class="c1">#&quot;name&quot;      : &quot;function name&quot;</span>
+            <span class="c1">#&quot;nfl&quot;       : &quot;name/file/line&quot;</span>
+            <span class="c1">#&quot;pcalls&quot;    : &quot;call count&quot;</span>
+            <span class="c1">#&quot;stdname&quot;   : &quot;standard name&quot;</span>
+            <span class="c1">#&quot;time&quot;      : &quot;internal time&quot;</span>
+            <span class="n">stats</span><span class="o">.</span><span class="n">sort_stats</span><span class="p">(</span><span class="n">sortby</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">log_file</span><span class="p">:</span>
+                <span class="n">stats</span><span class="o">.</span><span class="n">stream</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="n">log_file</span><span class="p">,</span><span class="s1">&#39;w&#39;</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">stats</span><span class="o">.</span><span class="n">stream</span> <span class="o">=</span> <span class="n">sys</span><span class="o">.</span><span class="n">stdout</span>
+            <span class="n">stats</span><span class="o">.</span><span class="n">print_stats</span><span class="p">()</span>
+            <span class="k">if</span> <span class="n">callers</span><span class="p">:</span>
+                <span class="n">stats</span><span class="o">.</span><span class="n">print_callers</span><span class="p">()</span>
+            <span class="k">if</span> <span class="n">callees</span><span class="p">:</span>
+                <span class="n">stats</span><span class="o">.</span><span class="n">print_callees</span><span class="p">()</span>
+            <span class="k">if</span> <span class="n">log_file</span><span class="p">:</span>
+                <span class="n">stats</span><span class="o">.</span><span class="n">stream</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+            <span class="c1">#prof.dump_stats(log_file)</span>
+            <span class="k">return</span> <span class="n">retval</span>
+        <span class="k">return</span> <span class="n">_wrapper</span>
+    <span class="k">return</span> <span class="n">_profiler</span></div>
+
+<div class="viewcode-block" id="timeit"><a class="viewcode-back" href="../../../api/gsTiles.npShp.test_cent.html#gsTiles.npShp.test_cent.timeit">[docs]</a><span class="k">def</span> <span class="nf">timeit</span><span class="p">(</span><span class="n">func</span><span class="p">):</span>
+    <span class="n">t0</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
+    <span class="n">ret</span> <span class="o">=</span> <span class="n">func</span><span class="p">()</span>
+    <span class="n">t1</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
+    <span class="k">print</span> <span class="n">func</span><span class="o">.</span><span class="n">__name__</span><span class="p">,</span> <span class="n">t1</span><span class="o">-</span><span class="n">t0</span><span class="p">,</span> <span class="p">(</span><span class="n">t1</span><span class="o">-</span><span class="n">t0</span><span class="p">)</span><span class="o">*</span><span class="mi">1000</span> <span class="o">/</span> <span class="mf">166941.</span></div>
+
+<span class="c1">#@profileit()</span>
+<div class="viewcode-block" id="npShape"><a class="viewcode-back" href="../../../api/gsTiles.npShp.test_cent.html#gsTiles.npShp.test_cent.npShape">[docs]</a><span class="k">def</span> <span class="nf">npShape</span><span class="p">():</span>
+    <span class="k">return</span> <span class="p">[</span><span class="n">point_in_polygon</span><span class="p">(</span><span class="n">pt</span><span class="p">,</span> <span class="n">poly</span><span class="p">)</span> <span class="k">for</span> <span class="n">pt</span><span class="p">,</span><span class="n">poly</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">pts</span><span class="p">,</span> <span class="n">polys</span><span class="p">)]</span></div>
+
+<span class="c1">#@profileit()</span>
+<div class="viewcode-block" id="pysalShape"><a class="viewcode-back" href="../../../api/gsTiles.npShp.test_cent.html#gsTiles.npShp.test_cent.pysalShape">[docs]</a><span class="k">def</span> <span class="nf">pysalShape</span><span class="p">():</span>
+    <span class="k">return</span> <span class="p">[</span><span class="n">poly</span><span class="o">.</span><span class="n">contains_point</span><span class="p">(</span><span class="n">pt</span><span class="p">)</span> <span class="k">for</span> <span class="n">pt</span><span class="p">,</span><span class="n">poly</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">pts2</span><span class="p">,</span> <span class="n">polys2</span><span class="p">)]</span></div>
+
+<span class="k">if</span> <span class="n">__name__</span><span class="o">==</span><span class="s1">&#39;__main__&#39;</span><span class="p">:</span>
+
+    <span class="c1">#npShape()</span>
+    <span class="c1">#pysalShape()</span>
+
+    <span class="c1">#timeit(baseline)</span>
+    <span class="c1">#timeit(baseline)</span>
+    <span class="n">timeit</span><span class="p">(</span><span class="n">npShape</span><span class="p">)</span>
+    <span class="c1">#timeit(pythonShape)</span>
+    <span class="n">timeit</span><span class="p">(</span><span class="n">pysalShape</span><span class="p">)</span>
+    <span class="c1">#timeit(pysalDBF)</span>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper"><div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../../index.html">Documentation overview</a><ul>
+  <li><a href="../../index.html">Module code</a><ul>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="../../../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2016, Charles R Schmidt.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.4.1</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.8</a>
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>

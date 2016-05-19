@@ -1,0 +1,128 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>gsTiles.locator module &mdash; gsTiles 0.0.1 documentation</title>
+    
+    <link rel="stylesheet" href="../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../',
+        VERSION:     '0.0.1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <link rel="top" title="gsTiles 0.0.1 documentation" href="../index.html" />
+    <link rel="up" title="gsTiles package" href="gsTiles.html" />
+    <link rel="next" title="gsTiles.optTile module" href="gsTiles.optTile.html" />
+    <link rel="prev" title="gsTiles.npShp.test_cent module" href="gsTiles.npShp.test_cent.html" />
+   
+  <link rel="stylesheet" href="../_static/custom.css" type="text/css" />
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head>
+  <body role="document">
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="module-gsTiles.locator">
+<span id="gstiles-locator-module"></span><h1>gsTiles.locator module<a class="headerlink" href="#module-gsTiles.locator" title="Permalink to this headline">¶</a></h1>
+<dl class="class">
+<dt id="gsTiles.locator.BBoxLocator">
+<em class="property">class </em><code class="descclassname">gsTiles.locator.</code><code class="descname">BBoxLocator</code><span class="sig-paren">(</span><em>source</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/gsTiles/locator.html#BBoxLocator"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#gsTiles.locator.BBoxLocator" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">object</span></code></p>
+<dl class="docutils">
+<dt>contains_point() will return a list of areas whose bonding boxes contain the point, and is much faster </dt>
+<dd>&#8211; benchmark: query 74001 centroids: 5.7439 seconds (13,000 queries per second)</dd>
+</dl>
+<dl class="method">
+<dt id="gsTiles.locator.BBoxLocator.clone">
+<code class="descname">clone</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/gsTiles/locator.html#BBoxLocator.clone"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#gsTiles.locator.BBoxLocator.clone" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="gsTiles.locator.BBoxLocator.extent">
+<code class="descname">extent</code><a class="headerlink" href="#gsTiles.locator.BBoxLocator.extent" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="gsTiles.locator.BBoxLocator.overlapping">
+<code class="descname">overlapping</code><span class="sig-paren">(</span><em>rect</em>, <em>zoom=-1</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/gsTiles/locator.html#BBoxLocator.overlapping"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#gsTiles.locator.BBoxLocator.overlapping" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper"><div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../index.html">Documentation overview</a><ul>
+  <li><a href="modules.html">gsTiles</a><ul>
+  <li><a href="gsTiles.html">gsTiles package</a><ul>
+      <li>Previous: <a href="gsTiles.npShp.test_cent.html" title="previous chapter">gsTiles.npShp.test_cent module</a></li>
+      <li>Next: <a href="gsTiles.optTile.html" title="next chapter">gsTiles.optTile module</a></li>
+  </ul></li>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../_sources/api/gsTiles.locator.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2016, Charles R Schmidt.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.4.1</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.8</a>
+      
+      |
+      <a href="../_sources/api/gsTiles.locator.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>

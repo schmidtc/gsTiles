@@ -1,0 +1,134 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>gsTiles.preRender module &mdash; gsTiles 0.0.1 documentation</title>
+    
+    <link rel="stylesheet" href="../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../',
+        VERSION:     '0.0.1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <link rel="top" title="gsTiles 0.0.1 documentation" href="../index.html" />
+    <link rel="up" title="gsTiles package" href="gsTiles.html" />
+    <link rel="next" title="gsTiles.serveTiles module" href="gsTiles.serveTiles.html" />
+    <link rel="prev" title="gsTiles.optTile module" href="gsTiles.optTile.html" />
+   
+  <link rel="stylesheet" href="../_static/custom.css" type="text/css" />
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head>
+  <body role="document">
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="module-gsTiles.preRender">
+<span id="gstiles-prerender-module"></span><h1>gsTiles.preRender module<a class="headerlink" href="#module-gsTiles.preRender" title="Permalink to this headline">¶</a></h1>
+<dl class="function">
+<dt id="gsTiles.preRender.drawPoly">
+<code class="descclassname">gsTiles.preRender.</code><code class="descname">drawPoly</code><span class="sig-paren">(</span><em>ctx</em>, <em>ctx2</em>, <em>polygon</em>, <em>pid</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/gsTiles/preRender.html#drawPoly"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#gsTiles.preRender.drawPoly" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="gsTiles.preRender.getColor">
+<code class="descclassname">gsTiles.preRender.</code><code class="descname">getColor</code><span class="sig-paren">(</span><em>offset</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/gsTiles/preRender.html#getColor"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#gsTiles.preRender.getColor" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="gsTiles.preRender.getContext">
+<code class="descclassname">gsTiles.preRender.</code><code class="descname">getContext</code><span class="sig-paren">(</span><em>surface</em>, <em>tx</em>, <em>ty</em>, <em>zoom</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/gsTiles/preRender.html#getContext"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#gsTiles.preRender.getContext" title="Permalink to this definition">¶</a></dt>
+<dd><p>getContext &#8211; Preps a cairo context for a tile</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="gsTiles.preRender.renderQuad">
+<code class="descclassname">gsTiles.preRender.</code><code class="descname">renderQuad</code><span class="sig-paren">(</span><em>tx</em>, <em>ty</em>, <em>zoom</em>, <em>polygons</em>, <em>borders=True</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/gsTiles/preRender.html#renderQuad"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#gsTiles.preRender.renderQuad" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="gsTiles.preRender.renderTile">
+<code class="descclassname">gsTiles.preRender.</code><code class="descname">renderTile</code><span class="sig-paren">(</span><em>tx</em>, <em>ty</em>, <em>zoom</em>, <em>polygons</em>, <em>borders=True</em>, <em>width=256</em>, <em>height=256</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/gsTiles/preRender.html#renderTile"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#gsTiles.preRender.renderTile" title="Permalink to this definition">¶</a></dt>
+<dd><p>renderTile &#8211; return a numpy array of uint32</p>
+<p>tx &#8211; tile x coord
+ty &#8211; tile y coord
+zoom &#8211; tile zoom
+polygon &#8211; a polygon locator</p>
+</dd></dl>
+
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper"><div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../index.html">Documentation overview</a><ul>
+  <li><a href="modules.html">gsTiles</a><ul>
+  <li><a href="gsTiles.html">gsTiles package</a><ul>
+      <li>Previous: <a href="gsTiles.optTile.html" title="previous chapter">gsTiles.optTile module</a></li>
+      <li>Next: <a href="gsTiles.serveTiles.html" title="next chapter">gsTiles.serveTiles module</a></li>
+  </ul></li>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../_sources/api/gsTiles.preRender.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2016, Charles R Schmidt.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.4.1</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.8</a>
+      
+      |
+      <a href="../_sources/api/gsTiles.preRender.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>
