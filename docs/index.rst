@@ -11,6 +11,12 @@ Contents:
 .. toctree::
    :maxdepth: 2
 
+   api/modules
+
+Coverage: `Coverage Report`_
+
+.. _Coverage Report: ./cover/index.html
+
 
 
 Indices and tables
