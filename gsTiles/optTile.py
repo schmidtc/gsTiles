@@ -1,5 +1,4 @@
 """
------------------
 Filename: optTile.py
 Use: Optimzes Tiles for gsTiles
 
@@ -7,7 +6,7 @@ determines the best format to store the raster.
 Outputs are: singleton, plte, full raster.
 
 Usage:
->>> tileType,strTile = optTile(png)
+> tileType,strTile = optTile(png)
 """
 import numpy
 import zlib
