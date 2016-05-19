@@ -1,0 +1,7 @@
+rtree
+cairo
+
+# Development Only
+coverage
+nose
+Sphinx

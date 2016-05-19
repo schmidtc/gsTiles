@@ -12,3 +12,8 @@ It aims to be:
 
 To use this library add the path to this directory to your PYTHONPATH
 or install with setup.py
+
+## Install
+
+gsTiles currently requires py2cairo.  The python 2.x bindings which are included with cario.
+This cannot be installed with pip.  cairocffi should be investigated as an alternative. Initial tests with cairocffi shows a significant reduction in performance.
