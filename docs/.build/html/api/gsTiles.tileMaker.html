@@ -1,0 +1,142 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>gsTiles.tileMaker module &mdash; gsTiles 0.0.1 documentation</title>
+    
+    <link rel="stylesheet" href="../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../',
+        VERSION:     '0.0.1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <link rel="top" title="gsTiles 0.0.1 documentation" href="../index.html" />
+    <link rel="up" title="gsTiles package" href="gsTiles.html" />
+    <link rel="prev" title="gsTiles.tileDB module" href="gsTiles.tileDB.html" />
+   
+  <link rel="stylesheet" href="../_static/custom.css" type="text/css" />
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head>
+  <body role="document">
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="module-gsTiles.tileMaker">
+<span id="gstiles-tilemaker-module"></span><h1>gsTiles.tileMaker module<a class="headerlink" href="#module-gsTiles.tileMaker" title="Permalink to this headline">¶</a></h1>
+<dl class="class">
+<dt id="gsTiles.tileMaker.Tiler">
+<em class="property">class </em><code class="descclassname">gsTiles.tileMaker.</code><code class="descname">Tiler</code><span class="sig-paren">(</span><em>polys</em>, <em>db</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/gsTiles/tileMaker.html#Tiler"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#gsTiles.tileMaker.Tiler" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="method">
+<dt id="gsTiles.tileMaker.Tiler.fullRender">
+<code class="descname">fullRender</code><span class="sig-paren">(</span><em>maxZoom=21</em>, <em>minZoom=5</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/gsTiles/tileMaker.html#Tiler.fullRender"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#gsTiles.tileMaker.Tiler.fullRender" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="gsTiles.tileMaker.Tiler.gQuadDraw">
+<code class="descname">gQuadDraw</code><span class="sig-paren">(</span><em>x</em>, <em>y</em>, <em>z</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/gsTiles/tileMaker.html#Tiler.gQuadDraw"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#gsTiles.tileMaker.Tiler.gQuadDraw" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="gsTiles.tileMaker.Tiler.gTileBounds">
+<code class="descname">gTileBounds</code><span class="sig-paren">(</span><em>zoom=0</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/gsTiles/tileMaker.html#Tiler.gTileBounds"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#gsTiles.tileMaker.Tiler.gTileBounds" title="Permalink to this definition">¶</a></dt>
+<dd><p>gTileBounds returns the bounds of the map in the gTile scheme. 
+note: gtBounds[4] should contain the zoom</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="gsTiles.tileMaker.Tiler.gTileDraw">
+<code class="descname">gTileDraw</code><span class="sig-paren">(</span><em>x</em>, <em>y</em>, <em>z</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/gsTiles/tileMaker.html#Tiler.gTileDraw"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#gsTiles.tileMaker.Tiler.gTileDraw" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="gsTiles.tileMaker.Tiler.toRender">
+<code class="descname">toRender</code><span class="sig-paren">(</span><em>zoom</em>, <em>force=False</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/gsTiles/tileMaker.html#Tiler.toRender"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#gsTiles.tileMaker.Tiler.toRender" title="Permalink to this definition">¶</a></dt>
+<dd><p>find the quads to render in current zoom
+parent zoom must have been fully rendered!
+only top left coordinate if returned,
+render all for tiles one shot yield 4x speedup.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="gsTiles.tileMaker.Tiler.zoomLevelDraw">
+<code class="descname">zoomLevelDraw</code><span class="sig-paren">(</span><em>zoom=0</em>, <em>minZoom=0</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/gsTiles/tileMaker.html#Tiler.zoomLevelDraw"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#gsTiles.tileMaker.Tiler.zoomLevelDraw" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper"><div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../index.html">Documentation overview</a><ul>
+  <li><a href="modules.html">gsTiles</a><ul>
+  <li><a href="gsTiles.html">gsTiles package</a><ul>
+      <li>Previous: <a href="gsTiles.tileDB.html" title="previous chapter">gsTiles.tileDB module</a></li>
+  </ul></li>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../_sources/api/gsTiles.tileMaker.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2016, Charles R Schmidt.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.4.1</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.8</a>
+      
+      |
+      <a href="../_sources/api/gsTiles.tileMaker.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>

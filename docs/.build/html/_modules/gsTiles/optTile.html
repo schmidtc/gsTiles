@@ -1,0 +1,230 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>gsTiles.optTile &mdash; gsTiles 0.0.1 documentation</title>
+    
+    <link rel="stylesheet" href="../../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../',
+        VERSION:     '0.0.1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <link rel="top" title="gsTiles 0.0.1 documentation" href="../../index.html" />
+    <link rel="up" title="Module code" href="../index.html" />
+   
+  <link rel="stylesheet" href="../../_static/custom.css" type="text/css" />
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head>
+  <body role="document">
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for gsTiles.optTile</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">Filename: optTile.py</span>
+<span class="sd">Use: Optimzes Tiles for gsTiles</span>
+
+<span class="sd">determines the best format to store the raster.</span>
+<span class="sd">Outputs are: singleton, plte, full raster.</span>
+
+<span class="sd">Usage:</span>
+<span class="sd">&gt; tileType,strTile = optTile(png)</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="kn">import</span> <span class="nn">numpy</span>
+<span class="kn">import</span> <span class="nn">zlib</span>
+<span class="c1">#import lz4</span>
+<span class="kn">from</span> <span class="nn">base64</span> <span class="kn">import</span> <span class="n">b64encode</span><span class="p">,</span><span class="n">b64decode</span>
+<span class="kn">from</span> <span class="nn">sys</span> <span class="kn">import</span> <span class="n">byteorder</span>
+<span class="k">if</span> <span class="n">byteorder</span> <span class="o">==</span> <span class="s1">&#39;little&#39;</span><span class="p">:</span>
+    <span class="n">SYSTEM_BYTEORDER</span> <span class="o">=</span> <span class="s1">&#39;</span><span class="se">\x00</span><span class="s1">&#39;</span>
+<span class="k">elif</span> <span class="n">byteorder</span> <span class="o">==</span> <span class="s1">&#39;big&#39;</span><span class="p">:</span>
+    <span class="n">SYSTEM_BYTEORDER</span> <span class="o">=</span> <span class="s1">&#39;</span><span class="se">\x01</span><span class="s1">&#39;</span>
+<span class="k">else</span><span class="p">:</span>
+    <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">,</span><span class="s2">&quot;Unknown endian: </span><span class="si">%s</span><span class="s2">&quot;</span><span class="o">%</span><span class="n">byteorder</span>
+<span class="kn">from</span> <span class="nn">array</span> <span class="kn">import</span> <span class="n">array</span>
+<span class="n">UNSIGNED_ITEM_TYPES</span> <span class="o">=</span> <span class="p">{</span><span class="n">array</span><span class="p">(</span><span class="s1">&#39;B&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">itemsize</span><span class="p">:</span><span class="s1">&#39;B&#39;</span><span class="p">,</span> <span class="n">array</span><span class="p">(</span><span class="s1">&#39;H&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">itemsize</span><span class="p">:</span><span class="s1">&#39;H&#39;</span><span class="p">,</span> <span class="n">array</span><span class="p">(</span><span class="s1">&#39;I&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">itemsize</span><span class="p">:</span><span class="s1">&#39;I&#39;</span><span class="p">,</span> <span class="n">array</span><span class="p">(</span><span class="s1">&#39;L&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">itemsize</span><span class="p">:</span><span class="s1">&#39;L&#39;</span><span class="p">}</span>
+<span class="kn">from</span> <span class="nn">struct</span> <span class="kn">import</span> <span class="n">pack</span><span class="p">,</span><span class="n">unpack</span>
+<span class="kn">from</span> <span class="nn">zlib</span> <span class="kn">import</span> <span class="n">crc32</span>
+
+<span class="n">BLANKTILE</span> <span class="o">=</span> <span class="s1">&#39;</span><span class="se">\x89</span><span class="s1">PNG</span><span class="se">\r\n\x1a\n\x00\x00\x00\r</span><span class="s1">IHDR</span><span class="se">\x00\x00\x00\x01\x00\x00\x00\x01\x01\x03\x00\x00\x00</span><span class="s1">%</span><span class="se">\xdb</span><span class="s1">V</span><span class="se">\xca\x00\x00\x00\x03</span><span class="s1">PLTE</span><span class="se">\xff\xff\xff\xa7\xc4\x1b\xc8\x00\x00\x00\x01</span><span class="s1">tRNS</span><span class="se">\x00</span><span class="s1">@</span><span class="se">\xe6\xd8</span><span class="s1">f</span><span class="se">\x00\x00\x00\x12</span><span class="s1">IDATx^</span><span class="se">\x05\xc0\x81\x08\x00\x00\x00\x00\xa0\xfd\xa9\x8f\x00\x02\x00\x01</span><span class="s1">t;RG</span><span class="se">\x00\x00\x00\x00</span><span class="s1">IEND</span><span class="se">\xae</span><span class="s1">B`</span><span class="se">\x82</span><span class="s1">&#39;</span>
+
+<span class="n">BLANK_ID</span> <span class="o">=</span> <span class="s1">&#39;A&#39;</span>
+<span class="n">SINGLETON_ID</span> <span class="o">=</span> <span class="s1">&#39;B&#39;</span>
+<span class="n">INTERGER_RASTER_ID</span> <span class="o">=</span> <span class="s1">&#39;C&#39;</span>
+<span class="n">PLTE_ID</span> <span class="o">=</span> <span class="s1">&#39;D&#39;</span>
+
+
+<div class="viewcode-block" id="Singleton"><a class="viewcode-back" href="../../api/gsTiles.optTile.html#gsTiles.optTile.Singleton">[docs]</a><span class="k">class</span> <span class="nc">Singleton</span><span class="p">:</span> <span class="c1">#a sole region</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">regionId</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">regionId</span> <span class="o">=</span> <span class="n">regionId</span>
+    <span class="k">def</span> <span class="nf">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">regionId</span><span class="p">)</span></div>
+<div class="viewcode-block" id="IntegerRaster"><a class="viewcode-back" href="../../api/gsTiles.optTile.html#gsTiles.optTile.IntegerRaster">[docs]</a><span class="k">class</span> <span class="nc">IntegerRaster</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot; Pack an intRaster with 2 byte header into a base64 string</span>
+<span class="sd">        byte 0: (byteOrder) \x00==little, \x01==big</span>
+<span class="sd">        byte 1: (dtype) \x00==&#39;?&#39; unsigned 2byte int, \x01 == &#39;?&#39; unsigned 4byte int</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">intRaster</span><span class="p">,</span><span class="n">maxID</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">intRaster</span> <span class="o">=</span> <span class="n">intRaster</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">maxID</span> <span class="o">=</span> <span class="n">maxID</span>
+    <span class="k">def</span> <span class="nf">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">maxID</span> <span class="o">&lt;</span> <span class="mi">2</span><span class="o">**</span><span class="mi">16</span><span class="p">:</span>
+            <span class="n">dtype</span> <span class="o">=</span> <span class="s1">&#39;uint16&#39;</span> <span class="c1">#UNSIGNED_ITEM_TYPES[2] #UNSIGNED_2_BYTE_INT</span>
+            <span class="n">DTYPE</span> <span class="o">=</span> <span class="s1">&#39;</span><span class="se">\x00</span><span class="s1">&#39;</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">dtype</span> <span class="o">=</span> <span class="s1">&#39;uint32&#39;</span> <span class="c1">#UNSIGNED_ITEM_TYPES[4] #UNSIGNED_4_BYTE_INT</span>
+            <span class="n">DTYPE</span> <span class="o">=</span> <span class="s1">&#39;</span><span class="se">\x01</span><span class="s1">&#39;</span>
+        <span class="n">a</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">intRaster</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">dtype</span><span class="p">)</span>
+        <span class="c1">#return SYSTEM_BYTEORDER+DTYPE+zlib.compress(a.tostring())</span>
+        <span class="k">return</span> <span class="n">SYSTEM_BYTEORDER</span><span class="o">+</span><span class="n">DTYPE</span><span class="o">+</span><span class="n">zlib</span><span class="o">.</span><span class="n">compress</span><span class="p">(</span><span class="n">numpy</span><span class="o">.</span><span class="n">getbuffer</span><span class="p">(</span><span class="n">a</span><span class="p">))</span></div>
+        
+<div class="viewcode-block" id="PLTE"><a class="viewcode-back" href="../../api/gsTiles.optTile.html#gsTiles.optTile.PLTE">[docs]</a><span class="k">class</span> <span class="nc">PLTE</span><span class="p">:</span> <span class="c1"># an indexed palette</span>
+    <span class="sd">&quot;&quot;&quot; Palletizes an intRaster and packs it into a base64 encoded string.</span>
+<span class="sd">        9 byte header:</span>
+<span class="sd">        byte0 = ByteOrder</span>
+<span class="sd">        byte1:4 = in &quot;!&quot; network byte order len of IDAT</span>
+<span class="sd">        byte4:8 = in &quot;!&quot; network byte order len of PLTE</span>
+<span class="sd">        byte9:n = ready to go IDAT (in network (big) byteorder)</span>
+<span class="sd">        byten:  = cPLTE</span>
+<span class="sd">    </span>
+<span class="sd">        Raises IOError is raster has too many regions (&gt;256)</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">intRaster</span><span class="p">,</span><span class="n">regions</span><span class="p">,</span><span class="n">n</span><span class="p">,</span><span class="n">width</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+        <span class="c1">#regions -- numpy.unique -- sorted array</span>
+        <span class="k">if</span> <span class="n">n</span> <span class="o">&gt;</span> <span class="mi">256</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">IOError</span><span class="p">,</span> <span class="s2">&quot;</span><span class="si">%r</span><span class="s2"> Too large for PLTE coloring, try using Raster format&quot;</span><span class="o">%</span><span class="p">(</span><span class="n">n</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">plte</span> <span class="o">=</span> <span class="n">regions</span>
+        <span class="n">plteMap</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">empty</span><span class="p">(</span><span class="n">regions</span><span class="o">.</span><span class="n">max</span><span class="p">()</span><span class="o">+</span><span class="mi">1</span><span class="p">,</span><span class="s1">&#39;uint8&#39;</span><span class="p">)</span>
+        <span class="n">plteMap</span><span class="p">[</span><span class="n">regions</span><span class="p">]</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">intRaster</span><span class="o">.</span><span class="n">size</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="s1">&#39;uint8&#39;</span><span class="p">)</span>
+        <span class="n">idRaster</span> <span class="o">=</span> <span class="n">plteMap</span><span class="p">[</span><span class="n">intRaster</span><span class="p">]</span>
+        <span class="c1">#rows = len(idRaster)/width</span>
+        <span class="n">idRaster</span><span class="o">.</span><span class="n">shape</span> <span class="o">=</span> <span class="p">(</span><span class="mi">256</span><span class="p">,</span><span class="mi">256</span><span class="p">)</span>
+        <span class="n">idRaster</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">concatenate</span><span class="p">((</span><span class="n">numpy</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="mi">256</span><span class="p">,</span><span class="mi">1</span><span class="p">),</span> <span class="s1">&#39;uint8&#39;</span><span class="p">),</span> <span class="n">idRaster</span><span class="p">),</span> <span class="mi">1</span><span class="p">)</span>
+        <span class="c1">#delta = width+1</span>
+        <span class="c1">#c = 0</span>
+        <span class="c1">#for i in xrange(rows):</span>
+        <span class="c1">#    idRaster.insert(c,0) #add filter codes</span>
+        <span class="c1">#    c+=delta</span>
+        <span class="c1">#assert [PLTE[id] for id in idRaster] == intRaster</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">idRaster</span> <span class="o">=</span> <span class="n">idRaster</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">width</span> <span class="o">=</span> <span class="n">width</span>
+    <span class="k">def</span> <span class="nf">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">plte</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">plte</span>
+        <span class="n">a</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">idRaster</span>
+        <span class="c1">#a = array(&#39;B&#39;) #unsigned 1byte int</span>
+        <span class="c1">#a.fromlist(idRaster)</span>
+        <span class="c1">### Why is this here? byteswap has no effect on &#39;uint8&#39;</span>
+        <span class="c1">#if SYSTEM_BYTEORDER == &#39;\x00&#39;: #little</span>
+        <span class="c1">#    a.byteswap() #to big (network)</span>
+
+        <span class="c1"># This is used directly in the final PNG, must be zlib.</span>
+        <span class="n">cIdRaster</span> <span class="o">=</span> <span class="n">zlib</span><span class="o">.</span><span class="n">compress</span><span class="p">(</span><span class="n">numpy</span><span class="o">.</span><span class="n">getbuffer</span><span class="p">(</span><span class="n">a</span><span class="p">))</span>
+        <span class="n">size</span> <span class="o">=</span> <span class="n">pack</span><span class="p">(</span><span class="s1">&#39;!I&#39;</span><span class="p">,</span><span class="nb">len</span><span class="p">(</span><span class="n">cIdRaster</span><span class="p">))</span>
+        <span class="n">crc</span> <span class="o">=</span> <span class="n">pack</span><span class="p">(</span><span class="s1">&#39;!I&#39;</span><span class="p">,</span><span class="n">crc32</span><span class="p">(</span><span class="s1">&#39;IDAT&#39;</span><span class="o">+</span><span class="n">cIdRaster</span><span class="p">)</span> <span class="o">&amp;</span> <span class="mh">0xFFFFFFFF</span><span class="p">)</span>
+        <span class="n">idat</span> <span class="o">=</span> <span class="n">size</span><span class="o">+</span><span class="s1">&#39;IDAT&#39;</span><span class="o">+</span><span class="n">cIdRaster</span><span class="o">+</span><span class="n">crc</span>
+
+        <span class="c1">#b = array(UNSIGNED_ITEM_TYPES[4]) #unsigned 4byte int</span>
+        <span class="c1">#b.fromlist(plte)</span>
+        <span class="c1">#cPLTE = zlib.compress(plte.tostring())</span>
+        <span class="n">cPLTE</span> <span class="o">=</span> <span class="n">zlib</span><span class="o">.</span><span class="n">compress</span><span class="p">(</span><span class="n">numpy</span><span class="o">.</span><span class="n">getbuffer</span><span class="p">(</span><span class="n">plte</span><span class="p">))</span>
+
+        <span class="n">s</span> <span class="o">=</span> <span class="n">SYSTEM_BYTEORDER</span> <span class="o">+</span> <span class="n">pack</span><span class="p">(</span><span class="s1">&#39;!LL&#39;</span><span class="p">,</span><span class="nb">len</span><span class="p">(</span><span class="n">idat</span><span class="p">),</span><span class="nb">len</span><span class="p">(</span><span class="n">cPLTE</span><span class="p">))</span> <span class="c1"># 9bytes &lt;--- ByteOrder(1byte), len of idat(4bytes), len of cPLTE(4bytes)</span>
+        <span class="n">s</span> <span class="o">=</span> <span class="n">s</span><span class="o">+</span><span class="n">idat</span><span class="o">+</span><span class="n">cPLTE</span>
+        <span class="k">return</span> <span class="n">s</span></div>
+
+<div class="viewcode-block" id="optTile"><a class="viewcode-back" href="../../api/gsTiles.optTile.html#gsTiles.optTile.optTile">[docs]</a><span class="k">def</span> <span class="nf">optTile</span><span class="p">(</span><span class="n">intRaster</span><span class="p">):</span>
+        <span class="n">regions</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span><span class="n">intRaster</span><span class="p">)</span>
+        <span class="n">n</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">regions</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">n</span> <span class="o">&gt;</span> <span class="mi">256</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">INTERGER_RASTER_ID</span><span class="p">,</span><span class="n">IntegerRaster</span><span class="p">(</span><span class="n">intRaster</span><span class="p">,</span><span class="n">intRaster</span><span class="o">.</span><span class="n">max</span><span class="p">())()</span>
+        <span class="k">elif</span> <span class="n">n</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">PLTE_ID</span><span class="p">,</span><span class="n">PLTE</span><span class="p">(</span><span class="n">intRaster</span><span class="p">,</span><span class="n">regions</span><span class="p">,</span><span class="n">n</span><span class="p">,</span><span class="n">width</span><span class="o">=</span><span class="mi">256</span><span class="p">)()</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">rid</span> <span class="o">=</span> <span class="n">regions</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="k">if</span> <span class="n">rid</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="k">return</span> <span class="n">BLANK_ID</span><span class="p">,</span><span class="s1">&#39;</span><span class="se">\x00</span><span class="s1">&#39;</span>
+            <span class="k">return</span> <span class="n">SINGLETON_ID</span><span class="p">,</span><span class="n">Singleton</span><span class="p">(</span><span class="n">rid</span><span class="p">)()</span></div>
+
+
+<span class="k">if</span> <span class="n">__name__</span><span class="o">==</span><span class="s1">&#39;__main__&#39;</span><span class="p">:</span>
+    <span class="c1">#C = numpy.zeros(256*256,&#39;uint32&#39;)</span>
+    <span class="c1">#C[:2500] = numpy.arange(2500)</span>
+    <span class="c1">#D = numpy.zeros(256*256,&#39;uint32&#39;)</span>
+    <span class="c1">#D[:23] = numpy.arange(50,500,20)</span>
+    <span class="n">C</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mi">10000000</span><span class="o">+</span><span class="n">x</span><span class="o">%</span><span class="mi">500</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="nb">xrange</span><span class="p">(</span><span class="mi">256</span><span class="o">*</span><span class="mi">256</span><span class="p">)],</span> <span class="s1">&#39;uint32&#39;</span><span class="p">)</span>
+    <span class="n">D</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mi">10000000</span><span class="o">+</span><span class="n">x</span><span class="o">%</span><span class="mi">50</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="nb">xrange</span><span class="p">(</span><span class="mi">256</span><span class="o">*</span><span class="mi">256</span><span class="p">)],</span> <span class="s1">&#39;uint32&#39;</span><span class="p">)</span>
+
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">xrange</span><span class="p">(</span><span class="mi">100</span><span class="p">):</span>
+        <span class="n">optTile</span><span class="p">(</span><span class="n">C</span><span class="p">)</span>
+        <span class="c1">#optTile(D)</span>
+        <span class="c1">#regions = numpy.unique(D) #result is sorted!</span>
+        <span class="c1">#n = len(regions)</span>
+        <span class="c1">#plteMap = numpy.empty(regions.max()+1,&#39;uint8&#39;)</span>
+        <span class="c1">#plteMap[regions] = numpy.arange(D.size, dtype=&#39;uint8&#39;)</span>
+        <span class="c1">#idRaster = plteMap[D]</span>
+        <span class="c1">#dPlte = dict(zip(regions,range(n)))</span>
+        <span class="c1">#assert (idRaster == [dPlte[x] for x in D]).all()</span>
+    
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper"><div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../index.html">Documentation overview</a><ul>
+  <li><a href="../index.html">Module code</a><ul>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2016, Charles R Schmidt.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.4.1</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.8</a>
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>

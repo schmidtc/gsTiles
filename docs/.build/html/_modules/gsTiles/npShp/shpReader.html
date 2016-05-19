@@ -1,0 +1,392 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>gsTiles.npShp.shpReader &mdash; gsTiles 0.0.1 documentation</title>
+    
+    <link rel="stylesheet" href="../../../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../../',
+        VERSION:     '0.0.1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../../_static/doctools.js"></script>
+    <link rel="top" title="gsTiles 0.0.1 documentation" href="../../../index.html" />
+    <link rel="up" title="Module code" href="../../index.html" />
+   
+  <link rel="stylesheet" href="../../../_static/custom.css" type="text/css" />
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head>
+  <body role="document">
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for gsTiles.npShp.shpReader</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">A Numpy Python ShapeFile Reader and Writer</span>
+
+<span class="sd">Contact:</span>
+<span class="sd">Charles Schmidt</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="n">__author__</span> <span class="o">=</span> <span class="s2">&quot;Charles R Schmidt &lt;schmidtc@gmail.com&gt;&quot;</span>
+<span class="kn">import</span> <span class="nn">numpy</span>
+<span class="kn">from</span> <span class="nn">itertools</span> <span class="kn">import</span> <span class="n">izip</span>
+
+<span class="n">HEADERSTRUCT</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">dtype</span><span class="p">([</span> <span class="c1"># Starts At</span>
+    <span class="p">(</span><span class="s1">&#39;filecode&#39;</span><span class="p">,</span> <span class="s1">&#39;&gt;i4&#39;</span><span class="p">),</span>     <span class="c1"># Byte 0</span>
+    <span class="p">(</span><span class="s1">&#39;unused&#39;</span><span class="p">,</span> <span class="s1">&#39;(5,)&gt;i4&#39;</span><span class="p">),</span>   <span class="c1"># Byte 4</span>
+    <span class="p">(</span><span class="s1">&#39;File Length&#39;</span><span class="p">,</span> <span class="s1">&#39;&gt;i4&#39;</span><span class="p">),</span>   <span class="c1"># Byte 24</span>
+    <span class="p">(</span><span class="s1">&#39;version&#39;</span><span class="p">,</span> <span class="s1">&#39;&lt;i4&#39;</span><span class="p">),</span>      <span class="c1"># Byte 28</span>
+    <span class="p">(</span><span class="s1">&#39;Shape Type&#39;</span><span class="p">,</span> <span class="s1">&#39;&lt;i4&#39;</span><span class="p">),</span>      <span class="c1"># Byte 32</span>
+    <span class="p">(</span><span class="s1">&#39;bbox&#39;</span><span class="p">,</span> <span class="s1">&#39;&lt;f8&#39;</span><span class="p">,</span> <span class="mi">4</span><span class="p">),</span>      <span class="c1"># Byte 36</span>
+    <span class="p">(</span><span class="s1">&#39;Zrng&#39;</span><span class="p">,</span> <span class="s1">&#39;&lt;f8&#39;</span><span class="p">,</span> <span class="mi">2</span><span class="p">),</span>      <span class="c1"># Byte 68</span>
+    <span class="p">(</span><span class="s1">&#39;Mrng&#39;</span><span class="p">,</span> <span class="s1">&#39;&lt;f8&#39;</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>       <span class="c1"># Byte 84</span>
+<span class="p">])</span>
+<span class="n">POLYGON_HEADER</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">dtype</span><span class="p">([(</span><span class="s1">&#39;Shape Type&#39;</span><span class="p">,</span><span class="s1">&#39;&lt;i4&#39;</span><span class="p">),(</span><span class="s1">&#39;bbox&#39;</span><span class="p">,</span><span class="s1">&#39;&lt;4d8&#39;</span><span class="p">),(</span><span class="s1">&#39;NumParts&#39;</span><span class="p">,</span><span class="s1">&#39;&lt;i4&#39;</span><span class="p">),(</span><span class="s1">&#39;NumPoints&#39;</span><span class="p">,</span><span class="s1">&#39;&lt;i4&#39;</span><span class="p">)])</span>
+<span class="n">i2s</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">i</span><span class="p">:</span> <span class="n">numpy</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">i</span><span class="p">],</span>  <span class="s1">&#39;&lt;i4&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">tostring</span><span class="p">()</span>
+<span class="n">NULL</span> <span class="o">=</span> <span class="n">i2s</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+
+<div class="viewcode-block" id="mean_pt"><a class="viewcode-back" href="../../../api/gsTiles.npShp.shpReader.html#gsTiles.npShp.shpReader.mean_pt">[docs]</a><span class="k">def</span> <span class="nf">mean_pt</span><span class="p">(</span><span class="n">ring</span><span class="p">):</span>
+    <span class="k">return</span> <span class="n">ring</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="point_in_polygon"><a class="viewcode-back" href="../../../api/gsTiles.npShp.shpReader.html#gsTiles.npShp.shpReader.point_in_polygon">[docs]</a><span class="k">def</span> <span class="nf">point_in_polygon</span><span class="p">(</span><span class="n">pt</span><span class="p">,</span> <span class="n">poly</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Example:</span>
+<span class="sd">    &gt;&gt;&gt; part = numpy.array([(10,10), (10,-10), (-10,-10), (-10,10), (10,10)])</span>
+<span class="sd">    &gt;&gt;&gt; hole = numpy.array([(1,1), (-1,1), (-1,-1), (1,-1), (1,1)])</span>
+<span class="sd">    &gt;&gt;&gt; poly = [part, hole]</span>
+<span class="sd">    &gt;&gt;&gt; pt = numpy.array([(0,0)])</span>
+<span class="sd">    &gt;&gt;&gt; point_in_polygon(pt, poly)</span>
+<span class="sd">    False</span>
+<span class="sd">    &gt;&gt;&gt; pt = numpy.array([(5,5)])</span>
+<span class="sd">    &gt;&gt;&gt; point_in_polygon(pt, poly)</span>
+<span class="sd">    True</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">w</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="k">for</span> <span class="n">ring</span> <span class="ow">in</span> <span class="n">poly</span><span class="p">:</span>
+        <span class="n">w</span> <span class="o">+=</span> <span class="n">point_in_ring2</span><span class="p">(</span><span class="n">pt</span><span class="p">,</span> <span class="n">ring</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">w</span> <span class="o">!=</span> <span class="mi">0</span></div>
+<div class="viewcode-block" id="point_in_ring"><a class="viewcode-back" href="../../../api/gsTiles.npShp.shpReader.html#gsTiles.npShp.shpReader.point_in_ring">[docs]</a><span class="k">def</span> <span class="nf">point_in_ring</span><span class="p">(</span><span class="n">pt</span><span class="p">,</span> <span class="n">ring</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    pt = numpy.ndarray (2,1)</span>
+<span class="sd">    ring = numpy.ndarray (2, n)</span>
+
+<span class="sd">    REF: http://www.engr.colostate.edu/~dga/dga/papers/point_in_polygon.pdf</span>
+
+<span class="sd">    returns w -&gt; {-n, 0, +n}</span>
+<span class="sd">        0 : pt is not in ring</span>
+<span class="sd">        +n: ring winds around pt n times in the counterclockwise direction</span>
+<span class="sd">        -n: ring winds around pt n times in the clockwise direction</span>
+
+<span class="sd">    &gt;&gt;&gt; ring = numpy.array([(1,1), (1,-1), (-1,-1), (-1,1), (1,1)])</span>
+<span class="sd">    &gt;&gt;&gt; pt = numpy.array([(0,0)])</span>
+<span class="sd">    &gt;&gt;&gt; point_in_ring2(pt, ring)</span>
+<span class="sd">    -1</span>
+<span class="sd">    &gt;&gt;&gt; ring = numpy.array([(1,1), (1,-1), (-1,-1), (-1,1), (1,1)][::-1])</span>
+<span class="sd">    &gt;&gt;&gt; point_in_ring2(pt, ring)</span>
+<span class="sd">    1</span>
+<span class="sd">    &gt;&gt;&gt; ring = numpy.array([(1,1), (1,0),(1,-1), (-1,-1), (-1,1), (1,1)])</span>
+<span class="sd">    &gt;&gt;&gt; point_in_ring2(pt, ring)</span>
+<span class="sd">    -1.0</span>
+<span class="sd">    &gt;&gt;&gt; ring = numpy.array([(1,1), (1,0), (2,0),(1,-1), (-1,-1), (-1,1), (1,1)])</span>
+<span class="sd">    &gt;&gt;&gt; point_in_ring2(pt, ring)</span>
+<span class="sd">    -1.0</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Translate the polygon such that pt is the origin.</span>
+    <span class="c1"># Algo Step 0.</span>
+    <span class="n">C</span> <span class="o">=</span> <span class="n">ring</span><span class="o">-</span><span class="n">pt</span>
+
+    <span class="c1"># Algo Step 1</span>
+    <span class="n">w</span> <span class="o">=</span> <span class="mi">0</span>
+
+    <span class="c1"># Algo Step 2</span>
+    <span class="c1"># if y_i * y_i+1 &lt; 0:</span>
+    <span class="c1">#     y_i and y_i+1 have difference signs</span>
+    <span class="c1">#     as such the segment crosses the x-axis</span>
+    <span class="n">xcross</span> <span class="o">=</span> <span class="p">(</span><span class="n">C</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">]</span> <span class="o">*</span> <span class="n">C</span><span class="p">[</span><span class="mi">1</span><span class="p">:,</span> <span class="mi">1</span><span class="p">])</span> <span class="o">&lt;</span> <span class="mi">0</span>
+    <span class="n">idx</span><span class="p">,</span> <span class="o">=</span> <span class="n">xcross</span><span class="o">.</span><span class="n">nonzero</span><span class="p">()</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">idx</span><span class="p">:</span>
+        <span class="n">r</span> <span class="o">=</span> <span class="n">C</span><span class="p">[</span><span class="n">i</span><span class="p">,</span><span class="mi">0</span><span class="p">]</span> <span class="o">+</span> <span class="p">((</span><span class="n">C</span><span class="p">[</span><span class="n">i</span><span class="p">,</span><span class="mi">1</span><span class="p">]</span> <span class="o">*</span> <span class="p">(</span><span class="n">C</span><span class="p">[</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="p">,</span><span class="mi">0</span><span class="p">]</span> <span class="o">-</span> <span class="n">C</span><span class="p">[</span><span class="n">i</span><span class="p">,</span><span class="mi">0</span><span class="p">]))</span> <span class="o">/</span> <span class="p">(</span><span class="n">C</span><span class="p">[</span><span class="n">i</span><span class="p">,</span><span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="n">C</span><span class="p">[</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">]))</span>
+        <span class="k">if</span> <span class="n">r</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">C</span><span class="p">[</span><span class="n">i</span><span class="p">,</span><span class="mi">1</span><span class="p">]</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="n">w</span> <span class="o">+=</span>  <span class="mi">1</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">w</span> <span class="o">-=</span>  <span class="mi">1</span>
+
+        <span class="c1"># r = x_i + ((y_i * (x_i+1 - x_i)) / (y_i - y_i+1))</span>
+        <span class="c1">#r = C[idx,0] + ((C[idx,1] * (C[idx+1,0] - C[idx,0])) / (C[idx,1] - C[idx+1,1]))</span>
+        <span class="c1">#return 0</span>
+
+    <span class="c1">#if xcross.any(): # some segments cross the x-axis</span>
+        <span class="c1">#i = C[:-1,:][xcross]</span>
+        <span class="c1">#i1 = C[1:,:][xcross]</span>
+        <span class="c1"># r == the x coord where the segment crosses the x-axis</span>
+        <span class="c1"># r = x_i + ((y_i * (x_i+1 - x_i)) / (y_i - y_i+1))</span>
+        <span class="c1">#r = i[:,0] + ((i[:,1] * (i1[:,0] - i[:,0])) / (i[:,1] - i1[:,1]))</span>
+        <span class="c1">#ycoord_before_x_intersection = C[idx,1][r &gt; 0]</span>
+        <span class="c1">#w += (ycoord_before_x_intersection &lt; 0).sum() # crosses from below (counter-clockwise)</span>
+        <span class="c1">#w -= (ycoord_before_x_intersection &gt; 0).sum() # crosses from below (counter-clockwise)</span>
+    <span class="n">on_x</span> <span class="o">=</span> <span class="n">C</span><span class="p">[:,</span><span class="mi">1</span><span class="p">]</span> <span class="o">==</span> <span class="mi">0</span>
+    <span class="n">idx</span><span class="p">,</span> <span class="o">=</span> <span class="n">on_x</span><span class="o">.</span><span class="n">nonzero</span><span class="p">()</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">idx</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">C</span><span class="p">[</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">]</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">pass</span>
+        <span class="k">elif</span> <span class="n">C</span><span class="p">[</span><span class="n">i</span><span class="p">,</span><span class="mi">0</span><span class="p">]</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">C</span><span class="p">[</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">]</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="n">w</span><span class="o">+=.</span><span class="mi">5</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">w</span><span class="o">-=.</span><span class="mi">5</span>
+        <span class="k">elif</span> <span class="n">C</span><span class="p">[</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="p">,</span><span class="mi">0</span><span class="p">]</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">C</span><span class="p">[</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">]</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="n">w</span><span class="o">+=.</span><span class="mi">5</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">w</span><span class="o">-=.</span><span class="mi">5</span>
+            
+    <span class="k">return</span> <span class="n">w</span>
+    <span class="n">on_x</span> <span class="o">=</span> <span class="p">(</span><span class="n">C</span><span class="p">[:,</span><span class="mi">1</span><span class="p">]</span> <span class="o">==</span> <span class="mi">0</span><span class="p">)</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">C</span><span class="p">[:,</span><span class="mi">0</span><span class="p">]</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">)</span> <span class="c1"># y_i is on the x-axis</span>
+    <span class="c1">#edge case, vert is on the x-axis</span>
+    <span class="k">if</span> <span class="n">on_x</span><span class="o">.</span><span class="n">any</span><span class="p">():</span>
+        <span class="c1"># drop segments where both endpoints are on the x-axis</span>
+        <span class="n">yi_on_x</span>  <span class="o">=</span> <span class="n">on_x</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">on_x</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">^</span> <span class="n">on_x</span><span class="p">[</span><span class="mi">1</span><span class="p">:])</span>
+        <span class="n">yi1_on_x</span> <span class="o">=</span> <span class="n">on_x</span><span class="p">[</span><span class="mi">1</span><span class="p">:]</span>  <span class="o">&amp;</span> <span class="p">(</span><span class="n">on_x</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">^</span> <span class="n">on_x</span><span class="p">[</span><span class="mi">1</span><span class="p">:])</span>
+
+        <span class="n">y_i1</span> <span class="o">=</span> <span class="n">C</span><span class="p">[</span><span class="mi">1</span><span class="p">:,</span><span class="mi">1</span><span class="p">][</span><span class="n">yi_on_x</span><span class="p">]</span>  <span class="c1">#grab the y-values after the y-values that fall on x</span>
+        <span class="n">w</span> <span class="o">+=</span> <span class="p">(</span><span class="n">y_i1</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span> <span class="o">/</span> <span class="mf">2.</span>
+        <span class="n">w</span> <span class="o">-=</span> <span class="p">(</span><span class="n">y_i1</span> <span class="o">&lt;=</span> <span class="mi">0</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span> <span class="o">/</span> <span class="mf">2.</span>
+
+        <span class="n">y_i</span> <span class="o">=</span> <span class="n">C</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">][</span><span class="n">yi1_on_x</span><span class="p">]</span>  <span class="c1">#grab the y-values after the y-values that fall on x</span>
+        <span class="n">w</span> <span class="o">+=</span> <span class="p">(</span><span class="n">y_i</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span> <span class="o">/</span> <span class="mf">2.</span>
+        <span class="n">w</span> <span class="o">-=</span> <span class="p">(</span><span class="n">y_i</span> <span class="o">&gt;=</span> <span class="mi">0</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span> <span class="o">/</span> <span class="mf">2.</span>
+
+    <span class="k">return</span> <span class="n">w</span></div>
+
+<div class="viewcode-block" id="point_in_ring2"><a class="viewcode-back" href="../../../api/gsTiles.npShp.shpReader.html#gsTiles.npShp.shpReader.point_in_ring2">[docs]</a><span class="k">def</span> <span class="nf">point_in_ring2</span><span class="p">(</span><span class="n">pt</span><span class="p">,</span> <span class="n">ring</span><span class="p">):</span>
+    <span class="n">C</span> <span class="o">=</span> <span class="n">ring</span><span class="o">-</span><span class="n">pt</span>
+    <span class="n">X</span> <span class="o">=</span> <span class="n">C</span><span class="p">[:,</span><span class="mi">0</span><span class="p">]</span>
+    <span class="n">Y</span> <span class="o">=</span> <span class="n">C</span><span class="p">[:,</span><span class="mi">1</span><span class="p">]</span>
+    <span class="n">w</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="n">y0</span> <span class="o">=</span> <span class="n">Y</span> <span class="o">==</span> <span class="mi">0</span>
+    <span class="n">idx</span><span class="p">,</span> <span class="o">=</span> <span class="p">(((</span><span class="n">Y</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">*</span> <span class="n">Y</span><span class="p">[</span><span class="mi">1</span><span class="p">:])</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">)</span> <span class="o">|</span> <span class="n">y0</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">|</span> <span class="n">y0</span><span class="p">[</span><span class="mi">1</span><span class="p">:])</span><span class="o">.</span><span class="n">nonzero</span><span class="p">()</span>
+    <span class="c1">#idx, = (((Y[:-1] * Y[1:]) &lt; 0) | (Y[:-1] == 0) | (Y[1:] == 0)).nonzero()</span>
+
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">idx</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">Y</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">*</span><span class="n">Y</span><span class="p">[</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="p">]</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">r</span> <span class="o">=</span> <span class="n">X</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">+</span> <span class="p">((</span><span class="n">Y</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">*</span> <span class="p">(</span><span class="n">X</span><span class="p">[</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="n">X</span><span class="p">[</span><span class="n">i</span><span class="p">]))</span> <span class="o">/</span> <span class="p">(</span><span class="n">Y</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">-</span> <span class="n">Y</span><span class="p">[</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="p">]))</span>
+            <span class="c1"># r = x_i + ((y_i * (x_i+1 - x_i)) / (y_i - y_i+1))</span>
+            <span class="k">if</span> <span class="n">r</span><span class="o">&gt;</span><span class="mi">0</span><span class="p">:</span>
+                <span class="n">w</span> <span class="o">+=</span> <span class="mi">1</span> <span class="k">if</span> <span class="n">Y</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">&lt;</span> <span class="mi">0</span> <span class="k">else</span> <span class="o">-</span><span class="mi">1</span>
+        <span class="k">elif</span> <span class="n">Y</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">==</span> <span class="mi">0</span> <span class="ow">and</span> <span class="n">Y</span><span class="p">[</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="p">]</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="c1"># This step is missing from the algorithm in the paper,</span>
+            <span class="c1"># but is mentioned earlier in the paper</span>
+            <span class="k">pass</span>
+        <span class="k">elif</span> <span class="n">Y</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">==</span> <span class="mi">0</span> <span class="ow">and</span> <span class="n">X</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">w</span> <span class="o">+=</span> <span class="mf">0.5</span> <span class="k">if</span> <span class="n">Y</span><span class="p">[</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="p">]</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="k">else</span> <span class="o">-</span><span class="mf">0.5</span>
+        <span class="k">elif</span> <span class="n">Y</span><span class="p">[</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="p">]</span> <span class="o">==</span> <span class="mi">0</span> <span class="ow">and</span> <span class="n">X</span><span class="p">[</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="p">]</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">w</span> <span class="o">+=</span> <span class="mf">0.5</span> <span class="k">if</span> <span class="n">Y</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">&lt;</span> <span class="mi">0</span> <span class="k">else</span> <span class="o">-</span><span class="mf">0.5</span>
+    <span class="k">return</span> <span class="n">w</span></div>
+
+<div class="viewcode-block" id="shapeFile"><a class="viewcode-back" href="../../../api/gsTiles.npShp.shpReader.html#gsTiles.npShp.shpReader.shapeFile">[docs]</a><span class="k">class</span> <span class="nc">shapeFile</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">filename</span><span class="p">):</span>
+        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">filename</span><span class="p">[:</span><span class="o">-</span><span class="mi">3</span><span class="p">]</span><span class="o">+</span><span class="s1">&#39;shx&#39;</span><span class="p">,</span> <span class="s1">&#39;rb&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">head</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">fromstring</span><span class="p">(</span><span class="n">f</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="mi">100</span><span class="p">),</span> <span class="n">HEADERSTRUCT</span><span class="p">)</span>
+            <span class="c1"># Shapefiles lengths and sizes are messured in 16bit words, multiple by 2 to get bytes</span>
+            <span class="c1"># Index contains (&#39;Offset&#39;, &#39;Content Length&#39;)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">index</span> <span class="o">=</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">numpy</span><span class="o">.</span><span class="n">fromfile</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="s1">&#39;2&gt;i&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">f</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span><span class="s1">&#39;rb&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_data</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">polyIndex</span><span class="p">()</span>
+<div class="viewcode-block" id="shapeFile.clone"><a class="viewcode-back" href="../../../api/gsTiles.npShp.shpReader.html#gsTiles.npShp.shpReader.shapeFile.clone">[docs]</a>    <span class="k">def</span> <span class="nf">clone</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="kn">import</span> <span class="nn">copy</span>
+        <span class="n">other</span> <span class="o">=</span> <span class="n">copy</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+        <span class="n">other</span><span class="o">.</span><span class="n">f</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">f</span><span class="o">.</span><span class="n">name</span><span class="p">,</span><span class="s1">&#39;rb&#39;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">other</span></div>
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">n</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">index</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">bbox</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">head</span><span class="p">[</span><span class="s1">&#39;bbox&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">tolist</span><span class="p">()[</span><span class="mi">0</span><span class="p">]</span>
+<div class="viewcode-block" id="shapeFile.polyIndex"><a class="viewcode-back" href="../../../api/gsTiles.npShp.shpReader.html#gsTiles.npShp.shpReader.shapeFile.polyIndex">[docs]</a>    <span class="k">def</span> <span class="nf">polyIndex</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Much fast to read this uniform strucuted data in one shot.</span>
+<span class="sd">        Uses more memory, but worth the speed up.</span>
+<span class="sd">        Memory in bytes is n * 44.</span>
+
+<span class="sd">        1million polygons ~ 40mb</span>
+
+
+<span class="sd">        index fields:</span>
+<span class="sd">            Shape Type - int (4 bytes)</span>
+<span class="sd">            bbox - floats (32) - [minx, miny, maxx, maxy]</span>
+<span class="sd">            NumParts - int (4)</span>
+<span class="sd">            NumPoints - int (4)</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="s1">&#39;polyIndex&#39;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_data</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_data</span><span class="p">[</span><span class="s1">&#39;polyIndex&#39;</span><span class="p">]</span>
+        <span class="n">f</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">f</span>
+        <span class="n">offsets</span> <span class="o">=</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">index</span><span class="p">[:,</span><span class="mi">0</span><span class="p">]</span><span class="o">+</span><span class="mi">8</span><span class="p">)</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span> 
+        <span class="n">s</span> <span class="o">=</span> <span class="s1">&#39;&#39;</span>
+        <span class="k">for</span> <span class="n">rec</span> <span class="ow">in</span> <span class="n">offsets</span><span class="p">:</span>
+            <span class="n">f</span><span class="o">.</span><span class="n">seek</span><span class="p">(</span><span class="n">rec</span><span class="p">)</span>
+            <span class="n">dat</span> <span class="o">=</span> <span class="n">f</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="mi">44</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">dat</span><span class="p">[:</span><span class="mi">4</span><span class="p">]</span> <span class="o">==</span> <span class="n">NULL</span><span class="p">:</span>
+                <span class="n">s</span> <span class="o">+=</span> <span class="s1">&#39;</span><span class="se">\x00</span><span class="s1">&#39;</span><span class="o">*</span><span class="mi">44</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">s</span> <span class="o">+=</span> <span class="n">dat</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_data</span><span class="p">[</span><span class="s1">&#39;polyIndex&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">pidx</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">fromstring</span><span class="p">(</span><span class="n">s</span><span class="p">,</span> <span class="n">POLYGON_HEADER</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">offsets</span>  <span class="o">=</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">index</span><span class="p">[:,</span><span class="mi">0</span><span class="p">]</span> <span class="o">+</span> <span class="mi">52</span><span class="p">)</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ps</span> <span class="o">=</span> <span class="p">(</span><span class="n">pidx</span><span class="p">[</span><span class="s1">&#39;NumParts&#39;</span><span class="p">]</span> <span class="o">*</span> <span class="mi">4</span><span class="p">)</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">size</span> <span class="o">=</span> <span class="p">(</span><span class="n">pidx</span><span class="p">[</span><span class="s1">&#39;NumParts&#39;</span><span class="p">]</span><span class="o">*</span><span class="mi">4</span> <span class="o">+</span> <span class="n">pidx</span><span class="p">[</span><span class="s1">&#39;NumPoints&#39;</span><span class="p">]</span><span class="o">*</span><span class="mi">16</span><span class="p">)</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ptype</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">dtype</span><span class="p">(</span><span class="s1">&#39;uint8,2float&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">pt</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">dtype</span><span class="p">(</span><span class="s1">&#39;&lt;i4&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">vt</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">dtype</span><span class="p">(</span><span class="s1">&#39;&lt;2d8&#39;</span><span class="p">)</span>
+        <span class="n">s</span> <span class="o">=</span> <span class="n">pidx</span><span class="p">[</span><span class="s1">&#39;NumPoints&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">tostring</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">npts</span> <span class="o">=</span> <span class="p">[</span><span class="n">s</span><span class="p">[</span><span class="n">i</span><span class="p">:</span><span class="n">i</span><span class="o">+</span><span class="mi">4</span><span class="p">]</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">xrange</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="nb">len</span><span class="p">(</span><span class="n">s</span><span class="p">),</span><span class="mi">4</span><span class="p">)]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">nprts</span> <span class="o">=</span> <span class="n">pidx</span><span class="p">[</span><span class="s1">&#39;NumParts&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_data</span><span class="p">[</span><span class="s1">&#39;polyIndex&#39;</span><span class="p">]</span></div>
+        
+<div class="viewcode-block" id="shapeFile.get"><a class="viewcode-back" href="../../../api/gsTiles.npShp.shpReader.html#gsTiles.npShp.shpReader.shapeFile.get">[docs]</a>    <span class="k">def</span> <span class="nf">get</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">oid</span><span class="p">):</span>
+        <span class="n">d</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_data</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">f</span><span class="o">.</span><span class="n">seek</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">offsets</span><span class="p">[</span><span class="n">oid</span><span class="p">])</span>
+        <span class="n">dat</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">f</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">size</span><span class="p">[</span><span class="n">oid</span><span class="p">])</span>
+        <span class="n">ps</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">ps</span><span class="p">[</span><span class="n">oid</span><span class="p">]</span>
+        <span class="n">parts</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">fromstring</span><span class="p">(</span><span class="n">dat</span><span class="p">[:</span><span class="n">ps</span><span class="p">]</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">npts</span><span class="p">[</span><span class="n">oid</span><span class="p">],</span> <span class="bp">self</span><span class="o">.</span><span class="n">pt</span><span class="p">)</span>
+        <span class="n">verts</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">fromstring</span><span class="p">(</span><span class="n">dat</span><span class="p">[</span><span class="n">ps</span><span class="p">:],</span> <span class="bp">self</span><span class="o">.</span><span class="n">vt</span><span class="p">)</span>
+        <span class="n">rec</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">xrange</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">nprts</span><span class="p">[</span><span class="n">oid</span><span class="p">]):</span>
+            <span class="n">rec</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">verts</span><span class="p">[</span><span class="n">parts</span><span class="p">[</span><span class="n">j</span><span class="p">]:</span><span class="n">parts</span><span class="p">[</span><span class="n">j</span><span class="o">+</span><span class="mi">1</span><span class="p">]])</span>
+        <span class="k">return</span> <span class="n">rec</span></div>
+    
+<div class="viewcode-block" id="shapeFile.shapes"><a class="viewcode-back" href="../../../api/gsTiles.npShp.shpReader.html#gsTiles.npShp.shpReader.shapeFile.shapes">[docs]</a>    <span class="k">def</span> <span class="nf">shapes</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span> <span class="c1">#for Polygons only.</span>
+        <span class="n">f</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">f</span>
+        <span class="n">start</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">offsets</span>
+        <span class="n">sizes</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">size</span>
+        <span class="n">partSizes</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">ps</span>
+        <span class="n">npts</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">npts</span>
+        <span class="n">nprts</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">nprts</span>
+        
+        <span class="n">pt</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">pt</span>
+        <span class="n">vt</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">vt</span>
+        <span class="n">ptype</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">ptype</span>
+        <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="p">(</span><span class="n">offset</span><span class="p">,</span><span class="n">size</span><span class="p">,</span><span class="n">ps</span><span class="p">,</span><span class="n">nparts</span><span class="p">)</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">izip</span><span class="p">(</span><span class="n">start</span><span class="p">,</span><span class="n">sizes</span><span class="p">,</span> <span class="n">partSizes</span><span class="p">,</span> <span class="n">nprts</span><span class="p">)):</span>
+            <span class="n">f</span><span class="o">.</span><span class="n">seek</span><span class="p">(</span><span class="n">offset</span><span class="p">)</span>
+            <span class="n">dat</span> <span class="o">=</span> <span class="n">f</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="n">size</span><span class="p">)</span>
+            <span class="n">parts</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">fromstring</span><span class="p">(</span><span class="n">dat</span><span class="p">[:</span><span class="n">ps</span><span class="p">]</span> <span class="o">+</span> <span class="n">npts</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">pt</span><span class="p">)</span>
+            <span class="n">verts</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">fromstring</span><span class="p">(</span><span class="n">dat</span><span class="p">[</span><span class="n">ps</span><span class="p">:],</span> <span class="n">vt</span><span class="p">)</span>
+            <span class="c1">#rec = []</span>
+            <span class="k">yield</span> <span class="p">[</span><span class="n">verts</span><span class="p">[</span><span class="n">parts</span><span class="p">[</span><span class="n">j</span><span class="p">]:</span><span class="n">parts</span><span class="p">[</span><span class="n">j</span><span class="o">+</span><span class="mi">1</span><span class="p">]]</span> <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">xrange</span><span class="p">(</span><span class="n">nparts</span><span class="p">)]</span></div>
+            <span class="c1">#for j in xrange(nparts):</span>
+            <span class="c1">#    rec.append(verts[parts[j]:parts[j+1]])</span>
+            <span class="c1">#yield rec</span>
+            <span class="c1">#TODO: test that the next line produces the same results as the previous 4</span>
+            <span class="c1">#yield [verts[parts[j]:parts[j+1]] for j in xrange(nparts)]</span>
+        
+<div class="viewcode-block" id="shapeFile.boxes"><a class="viewcode-back" href="../../../api/gsTiles.npShp.shpReader.html#gsTiles.npShp.shpReader.shapeFile.boxes">[docs]</a>    <span class="k">def</span> <span class="nf">boxes</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">bb</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">polyIndex</span><span class="p">()[</span><span class="s1">&#39;bbox&#39;</span><span class="p">]:</span>
+            <span class="k">yield</span> <span class="n">bb</span></div>
+<div class="viewcode-block" id="shapeFile.allboxes"><a class="viewcode-back" href="../../../api/gsTiles.npShp.shpReader.html#gsTiles.npShp.shpReader.shapeFile.allboxes">[docs]</a>    <span class="k">def</span> <span class="nf">allboxes</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">polyIndex</span><span class="p">()[</span><span class="s1">&#39;bbox&#39;</span><span class="p">]</span></div>
+<div class="viewcode-block" id="shapeFile.bbox_centroid"><a class="viewcode-back" href="../../../api/gsTiles.npShp.shpReader.html#gsTiles.npShp.shpReader.shapeFile.bbox_centroid">[docs]</a>    <span class="k">def</span> <span class="nf">bbox_centroid</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">boxes</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">allboxes</span><span class="p">()</span>
+        <span class="n">pt</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">empty</span><span class="p">((</span><span class="n">boxes</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="mi">2</span><span class="p">))</span>
+        <span class="n">pt</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">boxes</span><span class="p">[:,</span><span class="mi">0</span><span class="p">]</span> <span class="o">+</span> <span class="n">boxes</span><span class="p">[:,</span><span class="mi">2</span><span class="p">])</span> <span class="o">/</span> <span class="mf">2.0</span>
+        <span class="n">pt</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">boxes</span><span class="p">[:,</span><span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="n">boxes</span><span class="p">[:,</span><span class="mi">3</span><span class="p">])</span> <span class="o">/</span> <span class="mf">2.0</span>
+        <span class="k">return</span> <span class="n">pt</span></div></div>
+
+<span class="k">if</span> <span class="n">__name__</span> <span class="o">==</span> <span class="s1">&#39;__main__&#39;</span><span class="p">:</span>
+    <span class="n">shp</span> <span class="o">=</span> <span class="s1">&#39;/Users/charlie/Documents/data/blkgrps/blkgrps.gmerc.shp&#39;</span>
+    <span class="n">shx</span> <span class="o">=</span> <span class="s1">&#39;/Users/charlie/Documents/data/blkgrps/blkgrps.gmerc.shx&#39;</span>
+    <span class="c1">#shp = &#39;/Users/charlie/Documents/data/Seattle/parcel2000_city_resbldg99clean.shp&#39;</span>
+    <span class="c1">#shx = &#39;/Users/charlie/Documents/data/Seattle/parcel2000_city_resbldg99clean.shx&#39;</span>
+    <span class="c1">#shp = &#39;/Users/charlie/Documents/data/usa/usa.gmerc.shp&#39;</span>
+    <span class="c1">#shx = &#39;/Users/charlie/Documents/data/usa/usa.gmerc.shx&#39;</span>
+    <span class="c1">#shp = &#39;/Users/charlie/Documents/data/Illinois_BlockGrps/chicago_blocks.shp&#39;</span>
+    <span class="c1">#shx = &#39;/Users/charlie/Documents/data/Illinois_BlockGrps/chicago_blocks.shx&#39;</span>
+    <span class="c1">#f = open(shx,&#39;rb&#39;)</span>
+    <span class="c1">#head = numpy.fromstring(f.read(100), HEADERSTRUCT)</span>
+    <span class="c1">#index = 2 * numpy.fromfile(f, &#39;2&gt;i&#39;)</span>
+    <span class="kn">import</span> <span class="nn">time</span>
+
+    <span class="n">t0</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
+    <span class="n">s</span><span class="o">=</span> <span class="n">shapeFile</span><span class="p">(</span><span class="n">shp</span><span class="p">)</span>
+    <span class="n">t1</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
+    <span class="k">print</span> <span class="s1">&#39;load&#39;</span><span class="p">,(</span><span class="n">t1</span><span class="o">-</span><span class="n">t0</span><span class="p">)</span> <span class="o">*</span> <span class="mi">1000</span><span class="p">,</span> <span class="p">((</span><span class="n">t1</span><span class="o">-</span><span class="n">t0</span><span class="p">)</span> <span class="o">*</span> <span class="mi">1000</span><span class="p">)</span> <span class="o">/</span> <span class="n">s</span><span class="o">.</span><span class="n">n</span>
+
+    <span class="n">t0</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
+    <span class="n">c</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">s</span><span class="o">.</span><span class="n">shapes</span><span class="p">():</span>
+        <span class="n">c</span><span class="o">+=</span><span class="mi">1</span>
+    <span class="n">t1</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
+    <span class="k">print</span> <span class="s1">&#39;read.shp &#39;</span><span class="p">,(</span><span class="n">t1</span><span class="o">-</span><span class="n">t0</span><span class="p">)</span> <span class="o">*</span> <span class="mi">1000</span><span class="p">,</span> <span class="p">((</span><span class="n">t1</span><span class="o">-</span><span class="n">t0</span><span class="p">)</span> <span class="o">*</span> <span class="mi">1000</span><span class="p">)</span> <span class="o">/</span> <span class="n">s</span><span class="o">.</span><span class="n">n</span><span class="p">,</span> <span class="n">c</span>
+
+    <span class="c1">#import random</span>
+    <span class="c1">#ids = range(s.n)</span>
+    <span class="c1">#random.shuffle(ids)</span>
+    <span class="c1">#t0 = time.time()</span>
+    <span class="c1">#c=0</span>
+    <span class="c1">#for i in ids:</span>
+    <span class="c1">#    c+=1</span>
+    <span class="c1">#    s.get(i)</span>
+    <span class="c1">#t1 = time.time()</span>
+    <span class="c1">#print &#39;read.shp2 &#39;,(t1-t0) * 1000, ((t1-t0) * 1000) / s.n, c</span>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper"><div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../../index.html">Documentation overview</a><ul>
+  <li><a href="../../index.html">Module code</a><ul>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="../../../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2016, Charles R Schmidt.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.4.1</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.8</a>
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>

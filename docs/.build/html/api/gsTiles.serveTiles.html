@@ -1,0 +1,151 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>gsTiles.serveTiles module &mdash; gsTiles 0.0.1 documentation</title>
+    
+    <link rel="stylesheet" href="../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../',
+        VERSION:     '0.0.1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <link rel="top" title="gsTiles 0.0.1 documentation" href="../index.html" />
+    <link rel="up" title="gsTiles package" href="gsTiles.html" />
+    <link rel="next" title="gsTiles.simple module" href="gsTiles.simple.html" />
+    <link rel="prev" title="gsTiles.preRender module" href="gsTiles.preRender.html" />
+   
+  <link rel="stylesheet" href="../_static/custom.css" type="text/css" />
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head>
+  <body role="document">
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="module-gsTiles.serveTiles">
+<span id="gstiles-servetiles-module"></span><h1>gsTiles.serveTiles module<a class="headerlink" href="#module-gsTiles.serveTiles" title="Permalink to this headline">¶</a></h1>
+<dl class="class">
+<dt id="gsTiles.serveTiles.TileServer">
+<em class="property">class </em><code class="descclassname">gsTiles.serveTiles.</code><code class="descname">TileServer</code><a class="reference internal" href="../_modules/gsTiles/serveTiles.html#TileServer"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#gsTiles.serveTiles.TileServer" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">object</span></code></p>
+<dl class="method">
+<dt id="gsTiles.serveTiles.TileServer.GET">
+<code class="descname">GET</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/gsTiles/serveTiles.html#TileServer.GET"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#gsTiles.serveTiles.TileServer.GET" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="gsTiles.serveTiles.TileServer.addTileSet">
+<code class="descname">addTileSet</code><span class="sig-paren">(</span><em>path</em>, <em>tileset</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/gsTiles/serveTiles.html#TileServer.addTileSet"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#gsTiles.serveTiles.TileServer.addTileSet" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="gsTiles.serveTiles.TileSet">
+<em class="property">class </em><code class="descclassname">gsTiles.serveTiles.</code><code class="descname">TileSet</code><span class="sig-paren">(</span><em>gstile_path</em>, <em>shp_path</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/gsTiles/serveTiles.html#TileSet"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#gsTiles.serveTiles.TileSet" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">object</span></code></p>
+<dl class="method">
+<dt id="gsTiles.serveTiles.TileSet.GET">
+<code class="descname">GET</code><span class="sig-paren">(</span><em>x</em>, <em>y</em>, <em>z</em>, <em>b=0</em>, <em>**kqargs</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/gsTiles/serveTiles.html#TileSet.GET"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#gsTiles.serveTiles.TileSet.GET" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="gsTiles.serveTiles.TileSet.connect">
+<code class="descname">connect</code><span class="sig-paren">(</span><em>thread_index</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/gsTiles/serveTiles.html#TileSet.connect"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#gsTiles.serveTiles.TileSet.connect" title="Permalink to this definition">¶</a></dt>
+<dd><p>Non thread safe stuff goes here.
+This get&#8217;s called for each thread.</p>
+<dl class="docutils">
+<dt>Ref:</dt>
+<dd><a class="reference external" href="http://tools.cherrypy.org/wiki/Databases">http://tools.cherrypy.org/wiki/Databases</a></dd>
+</dl>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="gsTiles.serveTiles.TileSet.db">
+<code class="descname">db</code><a class="headerlink" href="#gsTiles.serveTiles.TileSet.db" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="gsTiles.serveTiles.TileSet.polys">
+<code class="descname">polys</code><a class="headerlink" href="#gsTiles.serveTiles.TileSet.polys" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper"><div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../index.html">Documentation overview</a><ul>
+  <li><a href="modules.html">gsTiles</a><ul>
+  <li><a href="gsTiles.html">gsTiles package</a><ul>
+      <li>Previous: <a href="gsTiles.preRender.html" title="previous chapter">gsTiles.preRender module</a></li>
+      <li>Next: <a href="gsTiles.simple.html" title="next chapter">gsTiles.simple module</a></li>
+  </ul></li>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../_sources/api/gsTiles.serveTiles.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2016, Charles R Schmidt.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.4.1</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.8</a>
+      
+      |
+      <a href="../_sources/api/gsTiles.serveTiles.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>

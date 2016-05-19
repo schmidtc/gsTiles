@@ -1,0 +1,181 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>gsTiles.serveTiles &mdash; gsTiles 0.0.1 documentation</title>
+    
+    <link rel="stylesheet" href="../../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../',
+        VERSION:     '0.0.1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <link rel="top" title="gsTiles 0.0.1 documentation" href="../../index.html" />
+    <link rel="up" title="Module code" href="../index.html" />
+   
+  <link rel="stylesheet" href="../../_static/custom.css" type="text/css" />
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head>
+  <body role="document">
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for gsTiles.serveTiles</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span> <span class="nn">base64</span>
+<span class="kn">import</span> <span class="nn">cherrypy</span>
+<span class="kn">from</span> <span class="nn">npShp.shpReader</span> <span class="kn">import</span> <span class="n">shapeFile</span>
+<span class="kn">from</span> <span class="nn">locator</span> <span class="kn">import</span> <span class="n">BBoxLocator</span>
+<span class="kn">from</span> <span class="nn">tileDB</span> <span class="kn">import</span> <span class="n">TileDB</span>
+<span class="kn">from</span> <span class="nn">preRender</span> <span class="kn">import</span> <span class="n">renderTile</span>
+<span class="kn">from</span> <span class="nn">optTile</span> <span class="kn">import</span> <span class="n">optTile</span>
+
+<div class="viewcode-block" id="TileSet"><a class="viewcode-back" href="../../api/gsTiles.serveTiles.html#gsTiles.serveTiles.TileSet">[docs]</a><span class="k">class</span> <span class="nc">TileSet</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">gstile_path</span><span class="p">,</span> <span class="n">shp_path</span><span class="p">):</span>
+        <span class="n">cherrypy</span><span class="o">.</span><span class="n">engine</span><span class="o">.</span><span class="n">subscribe</span><span class="p">(</span><span class="s1">&#39;start_thread&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">connect</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">gstile_path</span> <span class="o">=</span> <span class="n">gstile_path</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">shp_path</span> <span class="o">=</span> <span class="n">shp_path</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_polys</span> <span class="o">=</span> <span class="n">BBoxLocator</span><span class="p">(</span><span class="n">shapeFile</span><span class="p">(</span><span class="n">shp_path</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">exposed</span> <span class="o">=</span> <span class="bp">True</span>
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">db</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">gstile_path</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">cherrypy</span><span class="o">.</span><span class="n">thread_data</span><span class="o">.</span><span class="n">db_connections</span><span class="p">:</span>
+            <span class="n">cherrypy</span><span class="o">.</span><span class="n">thread_data</span><span class="o">.</span><span class="n">db_connections</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">gstile_path</span><span class="p">]</span> <span class="o">=</span> <span class="n">TileDB</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">gstile_path</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">cherrypy</span><span class="o">.</span><span class="n">thread_data</span><span class="o">.</span><span class="n">db_connections</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">gstile_path</span><span class="p">]</span>
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">polys</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="c1"># 2bit hack...</span>
+        <span class="c1"># shape reader is not thead safe</span>
+        <span class="c1"># rtree probably is </span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">shp_path</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">cherrypy</span><span class="o">.</span><span class="n">thread_data</span><span class="o">.</span><span class="n">polygons</span><span class="p">:</span>
+            <span class="n">cherrypy</span><span class="o">.</span><span class="n">thread_data</span><span class="o">.</span><span class="n">polygons</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">shp_path</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_polys</span><span class="o">.</span><span class="n">clone</span><span class="p">()</span>
+        <span class="k">return</span> <span class="n">cherrypy</span><span class="o">.</span><span class="n">thread_data</span><span class="o">.</span><span class="n">polygons</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">shp_path</span><span class="p">]</span>
+<div class="viewcode-block" id="TileSet.connect"><a class="viewcode-back" href="../../api/gsTiles.serveTiles.html#gsTiles.serveTiles.TileSet.connect">[docs]</a>    <span class="k">def</span> <span class="nf">connect</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">thread_index</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Non thread safe stuff goes here.</span>
+<span class="sd">        This get&#39;s called for each thread.</span>
+
+<span class="sd">        Ref:</span>
+<span class="sd">            http://tools.cherrypy.org/wiki/Databases</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">print</span> <span class="s2">&quot;Connect:&quot;</span><span class="p">,</span> <span class="n">thread_index</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">gstile_path</span>
+        <span class="n">cherrypy</span><span class="o">.</span><span class="n">thread_data</span><span class="o">.</span><span class="n">db_connections</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="n">cherrypy</span><span class="o">.</span><span class="n">thread_data</span><span class="o">.</span><span class="n">polygons</span> <span class="o">=</span> <span class="p">{}</span></div>
+            
+    <span class="nd">@cherrypy.tools.json_out</span><span class="p">()</span>
+<div class="viewcode-block" id="TileSet.GET"><a class="viewcode-back" href="../../api/gsTiles.serveTiles.html#gsTiles.serveTiles.TileSet.GET">[docs]</a>    <span class="k">def</span> <span class="nf">GET</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">z</span><span class="p">,</span> <span class="n">b</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="o">**</span><span class="n">kqargs</span><span class="p">):</span>
+        <span class="n">b</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">b</span><span class="p">)</span>
+        <span class="n">db</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">db</span>
+        <span class="n">tile</span> <span class="o">=</span> <span class="n">db</span><span class="o">.</span><span class="n">getTile</span><span class="p">(</span><span class="n">x</span><span class="p">,</span><span class="n">y</span><span class="p">,</span><span class="n">z</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">tile</span><span class="p">:</span>
+            <span class="n">t</span><span class="p">,</span> <span class="n">dat</span><span class="p">,</span> <span class="n">bdat</span> <span class="o">=</span> <span class="n">tile</span>
+            <span class="k">if</span> <span class="n">b</span><span class="o">!=</span><span class="mi">0</span><span class="p">:</span>
+                <span class="n">t</span> <span class="o">=</span> <span class="n">bdat</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+                <span class="n">dat</span> <span class="o">=</span> <span class="n">bdat</span><span class="p">[</span><span class="mi">1</span><span class="p">:]</span>
+            <span class="k">return</span> <span class="p">{</span><span class="s1">&#39;typ&#39;</span><span class="p">:</span> <span class="n">t</span><span class="p">,</span> <span class="s1">&#39;dat&#39;</span><span class="p">:</span><span class="n">base64</span><span class="o">.</span><span class="n">b64encode</span><span class="p">(</span><span class="n">dat</span><span class="p">),</span> <span class="s1">&#39;version&#39;</span><span class="p">:</span> <span class="mi">2</span><span class="p">}</span>
+        <span class="k">else</span><span class="p">:</span> <span class="c1">#Tile not found, could be blank, or just not yet rendered...</span>
+            <span class="n">z</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">z</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">z</span> <span class="o">&gt;</span> <span class="nb">int</span><span class="p">(</span><span class="n">db</span><span class="o">.</span><span class="n">get_prop</span><span class="p">(</span><span class="s1">&#39;max_zoom&#39;</span><span class="p">)):</span> <span class="c1">#this level hasn&#39;t been preRendered</span>
+                <span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">b</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">x</span><span class="p">),</span> <span class="nb">int</span><span class="p">(</span><span class="n">y</span><span class="p">),</span> <span class="nb">bool</span><span class="p">(</span><span class="n">b</span><span class="p">)</span>
+                <span class="n">tile</span><span class="p">,</span> <span class="n">btile</span> <span class="o">=</span> <span class="n">renderTile</span><span class="p">(</span><span class="n">x</span><span class="p">,</span><span class="n">y</span><span class="p">,</span><span class="n">z</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">polys</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">b</span><span class="o">!=</span><span class="mi">0</span><span class="p">:</span>
+                    <span class="n">tile</span> <span class="o">=</span> <span class="n">btile</span>
+                <span class="n">t</span><span class="p">,</span><span class="n">dat</span> <span class="o">=</span> <span class="n">optTile</span><span class="p">(</span><span class="n">tile</span><span class="p">)</span>
+                <span class="k">return</span> <span class="p">{</span><span class="s1">&#39;typ&#39;</span><span class="p">:</span> <span class="n">t</span><span class="p">,</span> <span class="s1">&#39;dat&#39;</span><span class="p">:</span><span class="n">base64</span><span class="o">.</span><span class="n">b64encode</span><span class="p">(</span><span class="n">dat</span><span class="p">),</span> <span class="s1">&#39;version&#39;</span><span class="p">:</span> <span class="mi">2</span><span class="p">}</span>
+            <span class="k">return</span> <span class="p">{</span><span class="s1">&#39;typ&#39;</span><span class="p">:</span> <span class="s1">&#39;A&#39;</span><span class="p">,</span> <span class="s1">&#39;dat&#39;</span><span class="p">:</span><span class="s1">&#39;AA==&#39;</span><span class="p">,</span> <span class="s1">&#39;version&#39;</span><span class="p">:</span> <span class="mi">2</span><span class="p">}</span></div></div>
+
+<div class="viewcode-block" id="TileServer"><a class="viewcode-back" href="../../api/gsTiles.serveTiles.html#gsTiles.serveTiles.TileServer">[docs]</a><span class="k">class</span> <span class="nc">TileServer</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">tileSets</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">exposed</span> <span class="o">=</span> <span class="bp">True</span>
+<div class="viewcode-block" id="TileServer.addTileSet"><a class="viewcode-back" href="../../api/gsTiles.serveTiles.html#gsTiles.serveTiles.TileServer.addTileSet">[docs]</a>    <span class="k">def</span> <span class="nf">addTileSet</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">path</span><span class="p">,</span> <span class="n">tileset</span><span class="p">):</span>
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">path</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">,</span> <span class="s2">&quot;</span><span class="si">%s</span><span class="s2"> already exisits!&quot;</span><span class="o">%</span><span class="n">path</span>
+        <span class="nb">setattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">path</span><span class="p">,</span> <span class="n">tileset</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">tileSets</span><span class="p">[</span><span class="n">path</span><span class="p">]</span> <span class="o">=</span> <span class="n">tileset</span></div>
+<div class="viewcode-block" id="TileServer.GET"><a class="viewcode-back" href="../../api/gsTiles.serveTiles.html#gsTiles.serveTiles.TileServer.GET">[docs]</a>    <span class="k">def</span> <span class="nf">GET</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">tileSets</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span></div></div>
+    
+
+
+<span class="k">if</span> <span class="n">__name__</span><span class="o">==</span><span class="s1">&#39;__main__&#39;</span><span class="p">:</span>
+    <span class="n">root</span> <span class="o">=</span> <span class="n">TileServer</span><span class="p">()</span>
+    <span class="n">root</span><span class="o">.</span><span class="n">maps</span> <span class="o">=</span> <span class="n">root</span>
+
+    <span class="n">dbname</span> <span class="o">=</span> <span class="s1">&#39;/Users/charlie/Documents/data/usa/usa.gsTiles.sqlite&#39;</span>
+    <span class="n">shpname</span> <span class="o">=</span> <span class="s1">&#39;/Users/charlie/Documents/data/usa/usa.gmerc.shp&#39;</span>
+    <span class="n">root</span><span class="o">.</span><span class="n">addTileSet</span><span class="p">(</span><span class="s1">&#39;usa&#39;</span><span class="p">,</span> <span class="n">TileSet</span><span class="p">(</span><span class="n">dbname</span><span class="p">,</span> <span class="n">shpname</span><span class="p">))</span>
+
+    <span class="n">conf</span> <span class="o">=</span> <span class="p">{</span> 
+        <span class="s1">&#39;global&#39;</span><span class="p">:</span> <span class="p">{</span>
+            <span class="s1">&#39;server.socket_host&#39;</span><span class="p">:</span> <span class="s1">&#39;0.0.0.0&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;server.socket_port&#39;</span><span class="p">:</span> <span class="mi">8170</span>
+        <span class="p">},</span>
+        <span class="s1">&#39;/&#39;</span><span class="p">:</span> <span class="p">{</span>
+            <span class="s1">&#39;request.dispatch&#39;</span><span class="p">:</span> <span class="n">cherrypy</span><span class="o">.</span><span class="n">dispatch</span><span class="o">.</span><span class="n">MethodDispatcher</span><span class="p">(),</span>
+            <span class="s1">&#39;response.headers.Access-Control-Allow-Origin&#39;</span><span class="p">:</span><span class="s1">&#39;*&#39;</span>
+        <span class="p">}</span>
+    <span class="p">}</span>
+    <span class="c1">#cherrypy.config.update({&#39;server.thread_pool_max&#39;: 3, &#39;server.thread_pool&#39;:3})</span>
+    <span class="n">cherrypy</span><span class="o">.</span><span class="n">quickstart</span><span class="p">(</span><span class="n">root</span><span class="p">,</span> <span class="s1">&#39;/&#39;</span><span class="p">,</span> <span class="n">conf</span><span class="p">)</span>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper"><div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../index.html">Documentation overview</a><ul>
+  <li><a href="../index.html">Module code</a><ul>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2016, Charles R Schmidt.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.4.1</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.8</a>
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>

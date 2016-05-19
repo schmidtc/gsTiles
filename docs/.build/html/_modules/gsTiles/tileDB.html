@@ -1,0 +1,223 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>gsTiles.tileDB &mdash; gsTiles 0.0.1 documentation</title>
+    
+    <link rel="stylesheet" href="../../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../',
+        VERSION:     '0.0.1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <link rel="top" title="gsTiles 0.0.1 documentation" href="../../index.html" />
+    <link rel="up" title="Module code" href="../index.html" />
+   
+  <link rel="stylesheet" href="../../_static/custom.css" type="text/css" />
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head>
+  <body role="document">
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for gsTiles.tileDB</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span> <span class="nn">sqlite3</span>
+<span class="kn">import</span> <span class="nn">pysal</span>
+<span class="kn">from</span> <span class="nn">npShp</span> <span class="kn">import</span> <span class="n">shpReader</span>
+<span class="kn">import</span> <span class="nn">json</span>
+
+<div class="viewcode-block" id="TileDB"><a class="viewcode-back" href="../../api/gsTiles.tileDB.html#gsTiles.tileDB.TileDB">[docs]</a><span class="k">class</span> <span class="nc">TileDB</span><span class="p">:</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">path</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">path</span> <span class="o">=</span> <span class="n">path</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">connect</span><span class="p">()</span>
+    <span class="nd">@classmethod</span>
+<div class="viewcode-block" id="TileDB.create"><a class="viewcode-back" href="../../api/gsTiles.tileDB.html#gsTiles.tileDB.TileDB.create">[docs]</a>    <span class="k">def</span> <span class="nf">create</span><span class="p">(</span><span class="n">cls</span><span class="p">,</span> <span class="n">path</span><span class="p">):</span>
+        <span class="n">i</span> <span class="o">=</span> <span class="n">cls</span><span class="p">(</span><span class="n">path</span><span class="p">)</span>
+        <span class="n">i</span><span class="o">.</span><span class="n">setup</span><span class="p">()</span></div>
+<div class="viewcode-block" id="TileDB.connect"><a class="viewcode-back" href="../../api/gsTiles.tileDB.html#gsTiles.tileDB.TileDB.connect">[docs]</a>    <span class="k">def</span> <span class="nf">connect</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">conn</span> <span class="o">=</span> <span class="n">sqlite3</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">path</span><span class="p">)</span>
+        <span class="n">cur</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">conn</span><span class="o">.</span><span class="n">cursor</span><span class="p">()</span>
+        <span class="n">cur</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="s2">&quot;&quot;&quot;PRAGMA synchronous=0&quot;&quot;&quot;</span><span class="p">)</span>
+        <span class="c1">#cur.execute(&quot;&quot;&quot;PRAGMA locking_mode=EXCLUSIVE&quot;&quot;&quot;)</span>
+        <span class="n">cur</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="s2">&quot;&quot;&quot;PRAGMA journal_mode=MEMORY&quot;&quot;&quot;</span><span class="p">)</span>
+        <span class="c1">#cur.execute(&quot;&quot;&quot;PRAGMA page_size=65536&quot;&quot;&quot;)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">cur</span> <span class="o">=</span> <span class="n">cur</span></div>
+
+<div class="viewcode-block" id="TileDB.set_geom_from_shp"><a class="viewcode-back" href="../../api/gsTiles.tileDB.html#gsTiles.tileDB.TileDB.set_geom_from_shp">[docs]</a>    <span class="k">def</span> <span class="nf">set_geom_from_shp</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">shp</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Creates data columns to store the bbox and centroid of each shape.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">shp</span> <span class="o">=</span> <span class="n">shpReader</span><span class="o">.</span><span class="n">shapeFile</span><span class="p">(</span><span class="n">shp</span><span class="p">,</span><span class="s1">&#39;r&#39;</span><span class="p">)</span>
+        <span class="n">bb</span> <span class="o">=</span> <span class="n">shp</span><span class="o">.</span><span class="n">allboxes</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">set_prop</span><span class="p">(</span><span class="s1">&#39;boxes&#39;</span><span class="p">,</span> <span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">bb</span><span class="o">.</span><span class="n">tolist</span><span class="p">()))</span>
+        <span class="n">cent</span> <span class="o">=</span> <span class="n">shp</span><span class="o">.</span><span class="n">bbox_centroid</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">set_prop</span><span class="p">(</span><span class="s1">&#39;centroids&#39;</span><span class="p">,</span> <span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">cent</span><span class="o">.</span><span class="n">tolist</span><span class="p">()))</span></div>
+        
+<div class="viewcode-block" id="TileDB.set_ids_from_dbf"><a class="viewcode-back" href="../../api/gsTiles.tileDB.html#gsTiles.tileDB.TileDB.set_ids_from_dbf">[docs]</a>    <span class="k">def</span> <span class="nf">set_ids_from_dbf</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dbf</span><span class="p">,</span> <span class="n">name</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        set_ids_from_dbf</span>
+
+<span class="sd">        Copy column from dbf into metadata to return as orded json list.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">db</span> <span class="o">=</span> <span class="n">pysal</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="n">dbf</span><span class="p">,</span><span class="s1">&#39;r&#39;</span><span class="p">)</span>
+        <span class="n">col</span> <span class="o">=</span> <span class="n">db</span><span class="o">.</span><span class="n">by_col</span><span class="p">[</span><span class="n">name</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">set_prop</span><span class="p">(</span><span class="s1">&#39;id:</span><span class="si">%s</span><span class="s1">&#39;</span><span class="o">%</span><span class="n">name</span><span class="p">,</span> <span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">col</span><span class="p">))</span></div>
+<div class="viewcode-block" id="TileDB.get_ids"><a class="viewcode-back" href="../../api/gsTiles.tileDB.html#gsTiles.tileDB.TileDB.get_ids">[docs]</a>    <span class="k">def</span> <span class="nf">get_ids</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Return the ids of the given name.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_prop</span><span class="p">(</span><span class="s1">&#39;id:</span><span class="si">%s</span><span class="s1">&#39;</span><span class="o">%</span><span class="n">name</span><span class="p">)</span></div>
+<div class="viewcode-block" id="TileDB.set_prop"><a class="viewcode-back" href="../../api/gsTiles.tileDB.html#gsTiles.tileDB.TileDB.set_prop">[docs]</a>    <span class="k">def</span> <span class="nf">set_prop</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="n">q</span> <span class="o">=</span> <span class="s2">&quot;INSERT OR REPLACE INTO metadata (name, value) VALUES (?, ?)&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">cur</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="n">q</span><span class="p">,</span> <span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">value</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">conn</span><span class="o">.</span><span class="n">commit</span><span class="p">()</span></div>
+<div class="viewcode-block" id="TileDB.get_prop"><a class="viewcode-back" href="../../api/gsTiles.tileDB.html#gsTiles.tileDB.TileDB.get_prop">[docs]</a>    <span class="k">def</span> <span class="nf">get_prop</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        mbtiles spec requires...</span>
+<span class="sd">        name -- string</span>
+<span class="sd">        type -- &#39;overlay&#39; or &#39;baselayer&#39;</span>
+<span class="sd">        version -- int</span>
+<span class="sd">        description -- string</span>
+<span class="sd">        format -- &#39;png&#39; or &#39;jpg&#39;</span>
+
+<span class="sd">        suggests...</span>
+<span class="sd">        bounds -- left, bottom, right, top</span>
+<span class="sd">        attribution -- str</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">r</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">cur</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="s2">&quot;SELECT value FROM metadata WHERE name=? limit 1&quot;</span><span class="p">,</span> <span class="p">(</span><span class="n">name</span><span class="p">,))</span><span class="o">.</span><span class="n">fetchone</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">r</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">r</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span></div>
+<div class="viewcode-block" id="TileDB.close"><a class="viewcode-back" href="../../api/gsTiles.tileDB.html#gsTiles.tileDB.TileDB.close">[docs]</a>    <span class="k">def</span> <span class="nf">close</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">conn</span><span class="o">.</span><span class="n">close</span><span class="p">()</span></div>
+
+<div class="viewcode-block" id="TileDB.setup"><a class="viewcode-back" href="../../api/gsTiles.tileDB.html#gsTiles.tileDB.TileDB.setup">[docs]</a>    <span class="k">def</span> <span class="nf">setup</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">cur</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="s2">&quot;CREATE TABLE IF NOT EXISTS tiles( zoom integer, x integer, y integer, typ char, data blob, borders blob);&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">cur</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="s2">&quot;CREATE UNIQUE INDEX IF NOT EXISTS tile_index on tiles (zoom, x, y);&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">cur</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="s2">&quot;CREATE UNIQUE INDEX IF NOT EXISTS type_index on tiles (zoom, x, y, typ);&quot;</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">cur</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="s2">&quot;CREATE TABLE IF NOT EXISTS metadata (name text, value text);&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">cur</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="s2">&quot;CREATE UNIQUE INDEX IF NOT EXISTS name ON metadata (name);&quot;</span><span class="p">);</span></div>
+
+<div class="viewcode-block" id="TileDB.addTile"><a class="viewcode-back" href="../../api/gsTiles.tileDB.html#gsTiles.tileDB.TileDB.addTile">[docs]</a>    <span class="k">def</span> <span class="nf">addTile</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">z</span><span class="p">,</span> <span class="n">typ</span><span class="p">,</span> <span class="n">dat</span><span class="p">,</span> <span class="n">border</span><span class="p">):</span>
+        <span class="n">q</span> <span class="o">=</span> <span class="s2">&quot;insert into tiles (zoom, x, y, typ, data, borders) values (?, ?, ?, ?, ?, ?);&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">cur</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="n">q</span><span class="p">,</span> <span class="p">(</span><span class="n">z</span><span class="p">,</span><span class="n">x</span><span class="p">,</span><span class="n">y</span><span class="p">,</span><span class="n">typ</span><span class="p">,</span><span class="nb">buffer</span><span class="p">(</span><span class="n">dat</span><span class="p">),</span><span class="nb">buffer</span><span class="p">(</span><span class="n">border</span><span class="p">)))</span></div>
+        <span class="c1">#self.conn.commit()</span>
+<div class="viewcode-block" id="TileDB.getTile"><a class="viewcode-back" href="../../api/gsTiles.tileDB.html#gsTiles.tileDB.TileDB.getTile">[docs]</a>    <span class="k">def</span> <span class="nf">getTile</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">z</span><span class="p">):</span>
+        <span class="n">q</span> <span class="o">=</span> <span class="s2">&quot;select typ,data,borders from tiles where zoom=? and x=? and y=? limit 1;&quot;</span>
+        <span class="n">res</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">cur</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="n">q</span><span class="p">,</span> <span class="p">(</span><span class="n">z</span><span class="p">,</span><span class="n">x</span><span class="p">,</span><span class="n">y</span><span class="p">))</span><span class="o">.</span><span class="n">fetchone</span><span class="p">()</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">res</span><span class="p">:</span>
+            <span class="n">z</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">z</span><span class="p">)</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">getParent</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">x</span><span class="p">),</span><span class="nb">int</span><span class="p">(</span><span class="n">y</span><span class="p">),</span><span class="n">z</span><span class="p">)</span>
+        <span class="n">t</span><span class="p">,</span><span class="n">d</span><span class="p">,</span><span class="n">b</span> <span class="o">=</span> <span class="n">res</span>
+        <span class="k">return</span> <span class="n">t</span><span class="p">,</span><span class="nb">str</span><span class="p">(</span><span class="n">d</span><span class="p">),</span><span class="nb">str</span><span class="p">(</span><span class="n">b</span><span class="p">)</span></div>
+<div class="viewcode-block" id="TileDB.count_branch_nodes"><a class="viewcode-back" href="../../api/gsTiles.tileDB.html#gsTiles.tileDB.TileDB.count_branch_nodes">[docs]</a>    <span class="k">def</span> <span class="nf">count_branch_nodes</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">zoom</span><span class="p">):</span>
+        <span class="n">q</span> <span class="o">=</span> <span class="s2">&quot;select count(typ) from tiles where zoom=? and (typ = &#39;C&#39; or typ = &#39;D&#39;);&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">cur</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="n">q</span><span class="p">,</span> <span class="p">(</span><span class="n">zoom</span><span class="p">,))</span><span class="o">.</span><span class="n">fetchone</span><span class="p">()[</span><span class="mi">0</span><span class="p">]</span></div>
+<div class="viewcode-block" id="TileDB.branch_nodes"><a class="viewcode-back" href="../../api/gsTiles.tileDB.html#gsTiles.tileDB.TileDB.branch_nodes">[docs]</a>    <span class="k">def</span> <span class="nf">branch_nodes</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">zoom</span><span class="p">):</span>
+        <span class="n">q</span> <span class="o">=</span> <span class="s2">&quot;select x,y from tiles where zoom=? and (typ = &#39;C&#39; or typ = &#39;D&#39;);&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">cur</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="n">q</span><span class="p">,</span> <span class="p">(</span><span class="n">zoom</span><span class="p">,))</span></div>
+<div class="viewcode-block" id="TileDB.missing"><a class="viewcode-back" href="../../api/gsTiles.tileDB.html#gsTiles.tileDB.TileDB.missing">[docs]</a>    <span class="k">def</span> <span class="nf">missing</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">z</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Return true if the tile does not exists and it&#39;s parent is not a leaf.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">q</span> <span class="o">=</span> <span class="s2">&quot;select typ from tiles where zoom=? and x=? and y=? limit 1;&quot;</span>
+        <span class="n">res</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">cur</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="n">q</span><span class="p">,</span> <span class="p">(</span><span class="n">z</span><span class="p">,</span><span class="n">x</span><span class="p">,</span><span class="n">y</span><span class="p">))</span><span class="o">.</span><span class="n">fetchone</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">res</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">False</span>
+        <span class="k">while</span> <span class="ow">not</span> <span class="n">res</span> <span class="ow">and</span> <span class="n">z</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">z</span> <span class="o">=</span> <span class="n">x</span><span class="o">&gt;&gt;</span><span class="mi">1</span><span class="p">,</span> <span class="n">y</span><span class="o">&gt;&gt;</span><span class="mi">1</span><span class="p">,</span> <span class="n">z</span><span class="o">-</span><span class="mi">1</span>
+            <span class="n">res</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">cur</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="n">q</span><span class="p">,</span> <span class="p">(</span><span class="n">z</span><span class="p">,</span><span class="n">x</span><span class="p">,</span><span class="n">y</span><span class="p">))</span><span class="o">.</span><span class="n">fetchone</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">res</span><span class="p">:</span>
+            <span class="n">typ</span> <span class="o">=</span> <span class="n">res</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="k">if</span> <span class="n">typ</span><span class="o">==</span><span class="s1">&#39;A&#39;</span> <span class="ow">or</span> <span class="n">typ</span><span class="o">==</span><span class="s1">&#39;B&#39;</span><span class="p">:</span>
+                <span class="k">return</span> <span class="bp">False</span>
+        <span class="k">return</span> <span class="bp">True</span></div>
+<div class="viewcode-block" id="TileDB.exists"><a class="viewcode-back" href="../../api/gsTiles.tileDB.html#gsTiles.tileDB.TileDB.exists">[docs]</a>    <span class="k">def</span> <span class="nf">exists</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">z</span><span class="p">):</span>
+        <span class="n">q</span> <span class="o">=</span> <span class="s2">&quot;select count(typ) from tiles where zoom=? and x=? and y=? limit 1;&quot;</span>
+        <span class="k">return</span> <span class="nb">bool</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">cur</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="n">q</span><span class="p">,</span> <span class="p">(</span><span class="n">z</span><span class="p">,</span><span class="n">x</span><span class="p">,</span><span class="n">y</span><span class="p">))</span><span class="o">.</span><span class="n">fetchone</span><span class="p">()[</span><span class="mi">0</span><span class="p">])</span></div>
+<div class="viewcode-block" id="TileDB.getParent"><a class="viewcode-back" href="../../api/gsTiles.tileDB.html#gsTiles.tileDB.TileDB.getParent">[docs]</a>    <span class="k">def</span> <span class="nf">getParent</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">z</span><span class="p">):</span>
+        <span class="n">q</span> <span class="o">=</span> <span class="s2">&quot;select typ,data,borders from tiles where zoom=? and x=? and y=? limit 1;&quot;</span>
+        <span class="n">res</span> <span class="o">=</span> <span class="bp">None</span>
+        <span class="k">while</span> <span class="ow">not</span> <span class="n">res</span> <span class="ow">and</span> <span class="n">z</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">z</span> <span class="o">=</span> <span class="n">x</span><span class="o">&gt;&gt;</span><span class="mi">1</span><span class="p">,</span> <span class="n">y</span><span class="o">&gt;&gt;</span><span class="mi">1</span><span class="p">,</span> <span class="n">z</span><span class="o">-</span><span class="mi">1</span>
+            <span class="n">res</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">cur</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="n">q</span><span class="p">,</span> <span class="p">(</span><span class="n">z</span><span class="p">,</span><span class="n">x</span><span class="p">,</span><span class="n">y</span><span class="p">))</span><span class="o">.</span><span class="n">fetchone</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">res</span><span class="p">:</span>
+            <span class="n">typ</span><span class="p">,</span><span class="n">dat</span><span class="p">,</span><span class="n">b</span><span class="o">=</span> <span class="n">res</span>
+            <span class="k">if</span> <span class="n">typ</span><span class="o">==</span><span class="s1">&#39;A&#39;</span> <span class="ow">or</span> <span class="n">typ</span><span class="o">==</span><span class="s1">&#39;B&#39;</span><span class="p">:</span>
+                <span class="k">return</span> <span class="p">(</span><span class="n">typ</span><span class="p">,</span><span class="n">dat</span><span class="p">,</span><span class="n">b</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">False</span></div>
+            
+<div class="viewcode-block" id="TileDB.parentIsLeaf"><a class="viewcode-back" href="../../api/gsTiles.tileDB.html#gsTiles.tileDB.TileDB.parentIsLeaf">[docs]</a>    <span class="k">def</span> <span class="nf">parentIsLeaf</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">z</span><span class="p">):</span>
+        <span class="n">q</span> <span class="o">=</span> <span class="s2">&quot;select typ from tiles where zoom=? and x=? and y=? limit 1;&quot;</span>
+        <span class="n">res</span> <span class="o">=</span> <span class="bp">None</span>
+        <span class="k">while</span> <span class="ow">not</span> <span class="n">res</span> <span class="ow">and</span> <span class="n">z</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">z</span> <span class="o">=</span> <span class="n">x</span><span class="o">&gt;&gt;</span><span class="mi">1</span><span class="p">,</span> <span class="n">y</span><span class="o">&gt;&gt;</span><span class="mi">1</span><span class="p">,</span> <span class="n">z</span><span class="o">-</span><span class="mi">1</span>
+            <span class="n">res</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">cur</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="n">q</span><span class="p">,</span> <span class="p">(</span><span class="n">z</span><span class="p">,</span><span class="n">x</span><span class="p">,</span><span class="n">y</span><span class="p">))</span><span class="o">.</span><span class="n">fetchone</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">res</span><span class="p">:</span>
+            <span class="n">typ</span> <span class="o">=</span> <span class="n">res</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="k">if</span> <span class="n">typ</span><span class="o">==</span><span class="s1">&#39;A&#39;</span> <span class="ow">or</span> <span class="n">typ</span><span class="o">==</span><span class="s1">&#39;B&#39;</span><span class="p">:</span>
+                <span class="k">return</span> <span class="bp">True</span>
+        <span class="k">return</span> <span class="bp">False</span></div></div>
+            
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper"><div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../index.html">Documentation overview</a><ul>
+  <li><a href="../index.html">Module code</a><ul>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2016, Charles R Schmidt.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.4.1</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.8</a>
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>

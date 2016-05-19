@@ -1,0 +1,203 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>gsTiles.preRender &mdash; gsTiles 0.0.1 documentation</title>
+    
+    <link rel="stylesheet" href="../../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../',
+        VERSION:     '0.0.1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <link rel="top" title="gsTiles 0.0.1 documentation" href="../../index.html" />
+    <link rel="up" title="Module code" href="../index.html" />
+   
+  <link rel="stylesheet" href="../../_static/custom.css" type="text/css" />
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head>
+  <body role="document">
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for gsTiles.preRender</h1><div class="highlight"><pre>
+<span></span><span class="ch">#!/usr/bin/env python</span>
+
+<span class="kn">import</span> <span class="nn">cairo</span>
+<span class="kn">import</span> <span class="nn">numpy</span>
+<span class="kn">from</span> <span class="nn">locator</span> <span class="kn">import</span> <span class="n">BBoxLocator</span>
+<span class="kn">from</span> <span class="nn">optTile</span> <span class="kn">import</span> <span class="n">optTile</span>
+<span class="kn">from</span> <span class="nn">simple</span> <span class="kn">import</span> <span class="n">simple</span>
+
+<span class="n">WIDTH</span><span class="p">,</span> <span class="n">HEIGHT</span> <span class="o">=</span> <span class="mi">256</span><span class="p">,</span> <span class="mi">256</span>
+<span class="n">SPHEREMERC_GROUND_SIZE</span> <span class="o">=</span> <span class="p">(</span><span class="mf">20037508.34</span><span class="o">*</span><span class="mi">2</span><span class="p">)</span>
+<span class="n">ID_OFFSET</span> <span class="o">=</span> <span class="mi">2</span> <span class="c1"># 0 = Background, 1 = Borders (unused)</span>
+<span class="n">MAX_OFFSET</span> <span class="o">=</span> <span class="mi">2</span><span class="o">**</span><span class="mi">24</span>
+
+<div class="viewcode-block" id="getColor"><a class="viewcode-back" href="../../api/gsTiles.preRender.html#gsTiles.preRender.getColor">[docs]</a><span class="k">def</span> <span class="nf">getColor</span><span class="p">(</span><span class="n">offset</span><span class="p">):</span>
+    <span class="n">i</span> <span class="o">=</span> <span class="n">offset</span> <span class="o">+</span> <span class="n">ID_OFFSET</span>
+    <span class="k">if</span> <span class="n">i</span> <span class="o">&gt;</span> <span class="n">MAX_OFFSET</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">,</span> <span class="s2">&quot;offset exceeds MAX_OFFSET&quot;</span>
+    <span class="c1"># There are 256 posible values within 1 byte,</span>
+    <span class="c1"># dividing by 255. results scales these values from 0 to 1</span>
+    <span class="c1"># dividing by 256. results in to many values</span>
+    <span class="n">r</span> <span class="o">=</span>  <span class="p">((</span><span class="n">i</span> <span class="o">&gt;&gt;</span> <span class="mi">16</span><span class="p">)</span> <span class="o">&amp;</span> <span class="mh">0xff</span><span class="p">)</span> <span class="o">/</span> <span class="mf">255.</span>
+    <span class="n">g</span> <span class="o">=</span>  <span class="p">((</span><span class="n">i</span> <span class="o">&gt;&gt;</span> <span class="mi">8</span><span class="p">)</span> <span class="o">&amp;</span> <span class="mh">0xff</span><span class="p">)</span> <span class="o">/</span> <span class="mf">255.</span>
+    <span class="n">b</span> <span class="o">=</span>  <span class="p">(</span><span class="n">i</span> <span class="o">&amp;</span> <span class="mh">0xff</span><span class="p">)</span> <span class="o">/</span> <span class="mf">255.</span>
+    <span class="k">return</span> <span class="n">r</span><span class="p">,</span><span class="n">g</span><span class="p">,</span><span class="n">b</span></div>
+
+<div class="viewcode-block" id="getContext"><a class="viewcode-back" href="../../api/gsTiles.preRender.html#gsTiles.preRender.getContext">[docs]</a><span class="k">def</span> <span class="nf">getContext</span><span class="p">(</span><span class="n">surface</span><span class="p">,</span> <span class="n">tx</span><span class="p">,</span> <span class="n">ty</span><span class="p">,</span> <span class="n">zoom</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    getContext -- Preps a cairo context for a tile</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">ctx</span> <span class="o">=</span> <span class="n">cairo</span><span class="o">.</span><span class="n">Context</span><span class="p">(</span><span class="n">surface</span><span class="p">)</span>
+    <span class="n">ctx</span><span class="o">.</span><span class="n">set_antialias</span><span class="p">(</span><span class="n">cairo</span><span class="o">.</span><span class="n">ANTIALIAS_NONE</span><span class="p">)</span>
+    <span class="n">ctx</span><span class="o">.</span><span class="n">set_line_join</span><span class="p">(</span><span class="n">cairo</span><span class="o">.</span><span class="n">LINE_JOIN_BEVEL</span><span class="p">)</span>
+
+    <span class="n">numtiles</span> <span class="o">=</span> <span class="mi">2</span><span class="o">**</span><span class="n">zoom</span>
+    <span class="n">meters_per_tile</span> <span class="o">=</span> <span class="n">SPHEREMERC_GROUND_SIZE</span> <span class="o">/</span> <span class="n">numtiles</span>
+
+    <span class="c1">#3rd</span>
+    <span class="n">ctx</span><span class="o">.</span><span class="n">translate</span><span class="p">(</span><span class="o">-</span><span class="n">WIDTH</span><span class="o">*</span><span class="n">tx</span><span class="p">,</span> <span class="o">-</span><span class="n">HEIGHT</span><span class="o">*</span><span class="n">ty</span><span class="p">)</span> <span class="c1">#shift to tile coords</span>
+    <span class="c1">#2nd</span>
+    <span class="n">ctx</span><span class="o">.</span><span class="n">scale</span><span class="p">(</span><span class="n">WIDTH</span> <span class="o">/</span> <span class="n">meters_per_tile</span><span class="p">,</span> <span class="o">-</span><span class="n">HEIGHT</span> <span class="o">/</span> <span class="n">meters_per_tile</span><span class="p">)</span> <span class="c1">#scale to pixels</span>
+    <span class="c1">#1st</span>
+    <span class="n">ctx</span><span class="o">.</span><span class="n">translate</span><span class="p">(</span><span class="n">SPHEREMERC_GROUND_SIZE</span><span class="o">/</span><span class="mf">2.0</span><span class="p">,</span> <span class="o">-</span><span class="n">SPHEREMERC_GROUND_SIZE</span><span class="o">/</span><span class="mf">2.0</span><span class="p">)</span> <span class="c1">#shift origin.</span>
+    <span class="k">return</span> <span class="n">ctx</span></div>
+
+<div class="viewcode-block" id="drawPoly"><a class="viewcode-back" href="../../api/gsTiles.preRender.html#gsTiles.preRender.drawPoly">[docs]</a><span class="k">def</span> <span class="nf">drawPoly</span><span class="p">(</span><span class="n">ctx</span><span class="p">,</span> <span class="n">ctx2</span><span class="p">,</span> <span class="n">polygon</span><span class="p">,</span> <span class="n">pid</span><span class="p">):</span>
+    <span class="n">r</span><span class="p">,</span><span class="n">g</span><span class="p">,</span><span class="n">b</span> <span class="o">=</span> <span class="n">getColor</span><span class="p">(</span><span class="n">pid</span><span class="p">)</span>
+    <span class="n">ctx</span><span class="o">.</span><span class="n">set_source_rgb</span><span class="p">(</span><span class="n">r</span><span class="p">,</span><span class="n">g</span><span class="p">,</span><span class="n">b</span><span class="p">)</span>
+    <span class="n">ctx2</span><span class="o">.</span><span class="n">set_source_rgb</span><span class="p">(</span><span class="n">r</span><span class="p">,</span><span class="n">g</span><span class="p">,</span><span class="n">b</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">part</span> <span class="ow">in</span> <span class="n">polygon</span><span class="p">:</span><span class="c1">#TODO don&#39;t ignore holes</span>
+        <span class="n">ctx</span><span class="o">.</span><span class="n">move_to</span><span class="p">(</span><span class="o">*</span><span class="n">part</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+        <span class="n">X</span> <span class="o">=</span> <span class="n">part</span><span class="p">[</span><span class="mi">1</span><span class="p">:,</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">Y</span> <span class="o">=</span> <span class="n">part</span><span class="p">[</span><span class="mi">1</span><span class="p">:,</span><span class="mi">1</span><span class="p">]</span>
+        <span class="nb">map</span><span class="p">(</span><span class="n">ctx</span><span class="o">.</span><span class="n">line_to</span><span class="p">,</span> <span class="n">X</span><span class="p">,</span> <span class="n">Y</span><span class="p">)</span>
+    <span class="n">ctx2</span><span class="o">.</span><span class="n">append_path</span><span class="p">(</span><span class="n">ctx</span><span class="o">.</span><span class="n">copy_path</span><span class="p">())</span>
+    <span class="n">ctx</span><span class="o">.</span><span class="n">fill</span><span class="p">()</span>
+    <span class="n">ctx2</span><span class="o">.</span><span class="n">fill_preserve</span><span class="p">()</span>
+    <span class="n">ctx2</span><span class="o">.</span><span class="n">set_source_rgb</span><span class="p">(</span><span class="mf">0.0</span><span class="p">,</span><span class="mf">0.0</span><span class="p">,</span><span class="mf">1.</span><span class="o">/</span><span class="mf">256.</span><span class="p">)</span>
+    <span class="n">ctx2</span><span class="o">.</span><span class="n">set_line_width</span><span class="p">(</span><span class="mf">1.</span><span class="o">/</span><span class="n">ctx2</span><span class="o">.</span><span class="n">get_matrix</span><span class="p">()[</span><span class="mi">0</span><span class="p">])</span>
+    <span class="n">ctx2</span><span class="o">.</span><span class="n">stroke</span><span class="p">()</span></div>
+
+<div class="viewcode-block" id="renderQuad"><a class="viewcode-back" href="../../api/gsTiles.preRender.html#gsTiles.preRender.renderQuad">[docs]</a><span class="k">def</span> <span class="nf">renderQuad</span><span class="p">(</span><span class="n">tx</span><span class="p">,</span> <span class="n">ty</span><span class="p">,</span> <span class="n">zoom</span><span class="p">,</span> <span class="n">polygons</span><span class="p">,</span> <span class="n">borders</span> <span class="o">=</span> <span class="bp">True</span><span class="p">):</span>
+    <span class="k">return</span> <span class="n">renderTile</span><span class="p">(</span><span class="n">tx</span><span class="p">,</span> <span class="n">ty</span><span class="p">,</span> <span class="n">zoom</span><span class="p">,</span> <span class="n">polygons</span><span class="p">,</span> <span class="n">borders</span><span class="p">,</span> <span class="mi">512</span><span class="p">,</span> <span class="mi">512</span><span class="p">)</span></div>
+<div class="viewcode-block" id="renderTile"><a class="viewcode-back" href="../../api/gsTiles.preRender.html#gsTiles.preRender.renderTile">[docs]</a><span class="k">def</span> <span class="nf">renderTile</span><span class="p">(</span><span class="n">tx</span><span class="p">,</span> <span class="n">ty</span><span class="p">,</span> <span class="n">zoom</span><span class="p">,</span> <span class="n">polygons</span><span class="p">,</span> <span class="n">borders</span> <span class="o">=</span> <span class="bp">True</span><span class="p">,</span> <span class="n">width</span> <span class="o">=</span> <span class="mi">256</span><span class="p">,</span> <span class="n">height</span> <span class="o">=</span> <span class="mi">256</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    renderTile -- return a numpy array of uint32</span>
+<span class="sd">    </span>
+<span class="sd">    tx -- tile x coord</span>
+<span class="sd">    ty -- tile y coord</span>
+<span class="sd">    zoom -- tile zoom</span>
+<span class="sd">    polygon -- a polygon locator</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># FORMAT_ARGB32 is premultiplied, which results in loss of precision and thus cannot be used.</span>
+    <span class="c1"># FORMAT_RGB30 offers up 30bits, (1 billion uniques), </span>
+    <span class="c1">#               but isn&#39;t available until 1.12 (we have 1.10)</span>
+    <span class="c1"># FORMAT_RGB24 will have to be used.</span>
+    <span class="c1"># Another option would be to render a 2nd channel with the alpha info.</span>
+    <span class="c1">#borders = False</span>
+    <span class="n">surface</span> <span class="o">=</span> <span class="n">cairo</span><span class="o">.</span><span class="n">ImageSurface</span><span class="p">(</span><span class="n">cairo</span><span class="o">.</span><span class="n">FORMAT_RGB24</span><span class="p">,</span> <span class="n">width</span><span class="p">,</span> <span class="n">height</span><span class="p">)</span>
+    <span class="n">ctx</span> <span class="o">=</span> <span class="n">getContext</span><span class="p">(</span><span class="n">surface</span><span class="p">,</span> <span class="n">tx</span><span class="p">,</span> <span class="n">ty</span><span class="p">,</span> <span class="n">zoom</span><span class="p">)</span>
+    <span class="n">bsurface</span> <span class="o">=</span> <span class="n">cairo</span><span class="o">.</span><span class="n">ImageSurface</span><span class="p">(</span><span class="n">cairo</span><span class="o">.</span><span class="n">FORMAT_RGB24</span><span class="p">,</span> <span class="n">width</span><span class="p">,</span> <span class="n">height</span><span class="p">)</span>
+    <span class="n">ctx2</span> <span class="o">=</span> <span class="n">getContext</span><span class="p">(</span><span class="n">bsurface</span><span class="p">,</span> <span class="n">tx</span><span class="p">,</span> <span class="n">ty</span><span class="p">,</span> <span class="n">zoom</span><span class="p">)</span>
+    <span class="n">simple_level</span> <span class="o">=</span> <span class="n">zoom</span> <span class="k">if</span> <span class="n">zoom</span> <span class="o">&lt;</span> <span class="mi">10</span> <span class="k">else</span> <span class="o">-</span><span class="mi">1</span>
+    <span class="n">extents</span> <span class="o">=</span> <span class="n">ctx</span><span class="o">.</span><span class="n">clip_extents</span><span class="p">()</span>
+    <span class="k">for</span> <span class="n">pid</span><span class="p">,</span><span class="n">polygon</span> <span class="ow">in</span> <span class="n">polygons</span><span class="o">.</span><span class="n">overlapping</span><span class="p">(</span><span class="n">extents</span><span class="p">,</span> <span class="n">simple_level</span><span class="p">):</span>
+        <span class="n">drawPoly</span><span class="p">(</span><span class="n">ctx</span><span class="p">,</span> <span class="n">ctx2</span><span class="p">,</span> <span class="n">polygon</span><span class="p">,</span> <span class="n">pid</span><span class="p">)</span>
+    <span class="c1">#if borders:</span>
+    <span class="c1">#    for width in range(10,0,-1):</span>
+    <span class="c1">#        ctx2.set_source_rgb(0.0,0.0,width/256.)</span>
+    <span class="c1">#        width = width/ctx2.get_matrix()[0]</span>
+    <span class="c1">#        ctx2.set_line_width(width)</span>
+    <span class="c1">#        ctx2.stroke_preserve()</span>
+    <span class="n">surface</span><span class="o">.</span><span class="n">flush</span><span class="p">()</span> <span class="c1">#make sure operations are finished</span>
+    <span class="c1">#surface.write_to_png (&quot;example.png&quot;) # Output to PNG</span>
+    <span class="n">a</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">frombuffer</span><span class="p">(</span><span class="n">surface</span><span class="o">.</span><span class="n">get_data</span><span class="p">(),</span> <span class="s1">&#39;uint32&#39;</span><span class="p">)</span> <span class="o">&amp;</span> <span class="mh">0x00ffffff</span>
+    <span class="n">surface</span><span class="o">.</span><span class="n">finish</span><span class="p">()</span>
+    <span class="k">if</span> <span class="n">borders</span><span class="p">:</span>
+        <span class="n">bsurface</span><span class="o">.</span><span class="n">flush</span><span class="p">()</span>
+        <span class="n">b</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">frombuffer</span><span class="p">(</span><span class="n">bsurface</span><span class="o">.</span><span class="n">get_data</span><span class="p">(),</span> <span class="s1">&#39;uint32&#39;</span><span class="p">)</span> <span class="o">&amp;</span> <span class="mh">0x00ffffff</span>
+        <span class="c1">#bsurface.write_to_png (&quot;example2.png&quot;) # Output to PNG</span>
+        <span class="n">bsurface</span><span class="o">.</span><span class="n">finish</span><span class="p">()</span>
+        <span class="k">return</span> <span class="n">a</span><span class="p">,</span><span class="n">b</span>
+    <span class="c1"># get_data returns buffer</span>
+    <span class="c1"># FORMAT_RGB24 consists of 32bit pixel in system byteorder</span>
+    <span class="c1"># as A,R,G,B values.</span>
+    <span class="c1"># The Alpha channel is present but unused, however</span>
+    <span class="c1"># it still contains data and must be zeroed.</span>
+    <span class="k">return</span> <span class="n">a</span><span class="p">,</span><span class="bp">None</span></div>
+
+
+<span class="k">if</span> <span class="n">__name__</span><span class="o">==</span><span class="s1">&#39;__main__&#39;</span><span class="p">:</span>
+    <span class="kn">import</span> <span class="nn">pysal</span>
+    <span class="n">shp</span> <span class="o">=</span> <span class="n">pysal</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="s1">&#39;/Users/charlie/Documents/data/usa/usa.gmerc.shp&#39;</span><span class="p">,</span><span class="s1">&#39;r&#39;</span><span class="p">)</span>
+    <span class="n">polys</span> <span class="o">=</span> <span class="n">BBoxLocator</span><span class="p">(</span><span class="n">shp</span><span class="p">)</span>
+    <span class="c1">#a,b = renderTile(127&gt;&gt;3,196&gt;&gt;3,6, polys, True)</span>
+    <span class="n">a</span><span class="p">,</span><span class="n">b</span> <span class="o">=</span> <span class="n">renderTile</span><span class="p">(</span><span class="mi">8</span><span class="o">&lt;&lt;</span><span class="mi">2</span><span class="p">,</span><span class="mi">13</span><span class="o">&lt;&lt;</span><span class="mi">2</span><span class="p">,</span><span class="mi">5</span><span class="o">+</span><span class="mi">2</span><span class="p">,</span> <span class="n">polys</span><span class="p">,</span> <span class="bp">True</span><span class="p">)</span>
+
+
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper"><div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../index.html">Documentation overview</a><ul>
+  <li><a href="../index.html">Module code</a><ul>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2016, Charles R Schmidt.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.4.1</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.8</a>
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>

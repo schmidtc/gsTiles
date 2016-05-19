@@ -1,0 +1,154 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>gsTiles.locator &mdash; gsTiles 0.0.1 documentation</title>
+    
+    <link rel="stylesheet" href="../../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../',
+        VERSION:     '0.0.1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <link rel="top" title="gsTiles 0.0.1 documentation" href="../../index.html" />
+    <link rel="up" title="Module code" href="../index.html" />
+   
+  <link rel="stylesheet" href="../../_static/custom.css" type="text/css" />
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head>
+  <body role="document">
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for gsTiles.locator</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span> <span class="nn">time</span>
+<span class="kn">import</span> <span class="nn">rtree</span>
+<span class="kn">from</span> <span class="nn">simple</span> <span class="kn">import</span> <span class="n">simple</span>
+
+
+<div class="viewcode-block" id="BBoxLocator"><a class="viewcode-back" href="../../api/gsTiles.locator.html#gsTiles.locator.BBoxLocator">[docs]</a><span class="k">class</span> <span class="nc">BBoxLocator</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    contains_point() will return a list of areas whose bonding boxes contain the point, and is much faster </span>
+<span class="sd">        -- benchmark: query 74001 centroids: 5.7439 seconds (13,000 queries per second)</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">source</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">source</span> <span class="o">=</span> <span class="n">source</span>
+
+        <span class="n">idx</span> <span class="o">=</span> <span class="n">rtree</span><span class="o">.</span><span class="n">index</span><span class="o">.</span><span class="n">Index</span><span class="p">()</span>
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">source</span><span class="p">,</span><span class="s1">&#39;boxes&#39;</span><span class="p">):</span>
+            <span class="k">def</span> <span class="nf">f</span><span class="p">():</span>
+                <span class="k">for</span> <span class="n">i</span><span class="p">,</span><span class="n">bb</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">source</span><span class="o">.</span><span class="n">allboxes</span><span class="p">()):</span>
+                    <span class="k">yield</span> <span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="n">bb</span><span class="p">,</span> <span class="bp">None</span><span class="p">)</span>
+            <span class="n">idx</span> <span class="o">=</span> <span class="n">rtree</span><span class="o">.</span><span class="n">index</span><span class="o">.</span><span class="n">Index</span><span class="p">(</span><span class="n">f</span><span class="p">())</span>
+            <span class="c1">#for i,bb in enumerate(source.boxes()):</span>
+            <span class="c1">#    idx.insert(i, bb)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">i</span><span class="p">,</span><span class="n">rec</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">source</span><span class="p">):</span>
+                <span class="n">idx</span><span class="o">.</span><span class="n">insert</span><span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="n">rec</span><span class="o">.</span><span class="n">bbox</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">idx</span> <span class="o">=</span> <span class="n">idx</span>
+<div class="viewcode-block" id="BBoxLocator.clone"><a class="viewcode-back" href="../../api/gsTiles.locator.html#gsTiles.locator.BBoxLocator.clone">[docs]</a>    <span class="k">def</span> <span class="nf">clone</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="kn">import</span> <span class="nn">copy</span>
+        <span class="n">other</span> <span class="o">=</span> <span class="n">copy</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+        <span class="n">other</span><span class="o">.</span><span class="n">source</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">source</span><span class="o">.</span><span class="n">clone</span><span class="p">()</span>
+        <span class="k">return</span> <span class="n">other</span></div>
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">extent</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">source</span><span class="o">.</span><span class="n">bbox</span>
+<div class="viewcode-block" id="BBoxLocator.overlapping"><a class="viewcode-back" href="../../api/gsTiles.locator.html#gsTiles.locator.BBoxLocator.overlapping">[docs]</a>    <span class="k">def</span> <span class="nf">overlapping</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">rect</span><span class="p">,</span> <span class="n">zoom</span><span class="o">=-</span><span class="mi">1</span><span class="p">):</span>
+        <span class="c1"># prevents a memory leak...</span>
+        <span class="c1"># rtree doesn&#39;t release the memory until we&#39;ve </span>
+        <span class="c1"># accessed all elements in the generator</span>
+        <span class="n">offsets</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">idx</span><span class="o">.</span><span class="n">intersection</span><span class="p">(</span><span class="n">rect</span><span class="p">))</span>
+        <span class="n">s</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">source</span>
+        <span class="k">if</span> <span class="n">zoom</span> <span class="o">&gt;</span> <span class="o">-</span><span class="mi">1</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">o</span> <span class="ow">in</span> <span class="n">offsets</span><span class="p">:</span>
+                <span class="k">yield</span> <span class="n">o</span><span class="p">,</span><span class="n">simple</span><span class="p">(</span><span class="n">s</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">o</span><span class="p">),</span> <span class="n">zoom</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">o</span> <span class="ow">in</span> <span class="n">offsets</span><span class="p">:</span>
+                <span class="k">yield</span> <span class="n">o</span><span class="p">,</span><span class="n">s</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">o</span><span class="p">)</span></div></div>
+
+<span class="k">if</span> <span class="n">__name__</span><span class="o">==</span><span class="s1">&#39;__main__&#39;</span><span class="p">:</span>
+    <span class="kn">import</span> <span class="nn">time</span>
+    <span class="kn">import</span> <span class="nn">pysal</span>
+    <span class="kn">from</span> <span class="nn">npShp.shpReader</span> <span class="kn">import</span> <span class="n">shapeFile</span>
+    
+    <span class="n">shp_fname</span> <span class="o">=</span> <span class="s1">&#39;/Users/charlie/Documents/data/usa/usa.gmerc.shp&#39;</span>
+    <span class="c1">#shp_fname = &#39;/Users/charlie/Documents/data/blkgrps/blkgrps.gmerc.shp&#39;</span>
+    <span class="c1">#shp = pysal.open(shp_fname,&#39;r&#39;)</span>
+    <span class="n">shp</span> <span class="o">=</span> <span class="n">shapeFile</span><span class="p">(</span><span class="n">shp_fname</span><span class="p">)</span>
+    <span class="n">loc</span> <span class="o">=</span> <span class="n">BBoxLocator</span><span class="p">(</span><span class="n">shp</span><span class="p">)</span>
+
+    <span class="c1">#getbb = lambda p: p.bbox</span>
+    <span class="c1">#bbox_centroid = lambda b: (b[0]+b[2]/2., b[1]+b[3]/2.)</span>
+    <span class="c1">#test_data = shp.allboxes().tolist()</span>
+    <span class="c1">#import random</span>
+    <span class="c1">#random.shuffle(test_data)</span>
+
+    <span class="c1">#t0 = time.time()</span>
+    <span class="c1">#for rect in test_data:</span>
+    <span class="c1">#    loc.overlapping(rect)</span>
+    <span class="c1">#t1 = time.time()</span>
+    <span class="c1">#print &quot;BBOX: (n, seconds)&quot;, len(test_data) , t1-t0</span>
+
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper"><div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../index.html">Documentation overview</a><ul>
+  <li><a href="../index.html">Module code</a><ul>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2016, Charles R Schmidt.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.4.1</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.8</a>
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>
