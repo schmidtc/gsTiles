@@ -21,3 +21,4 @@ def create_source(fname, max_zoom = 12):
     t = Tiler(polys, db)
     t.fullRender(max_zoom)
     db.close()
+    return dbname
