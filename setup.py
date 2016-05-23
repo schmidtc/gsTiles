@@ -5,7 +5,7 @@ setup.py for gsTiles
 from distutils.core import setup 
 
 setup(name = 'gsTiles',
-      version = "0.0.1",
+      version = "0.0.2",
       description = 'gsTiles: Python Library for making gsTiles',
       author = 'Charles R Schmidt',
       author_email = 'charlie@gwikis.com',
