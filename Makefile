@@ -20,3 +20,7 @@ docs:
 	cd docs && make html
 clean:
 	find . -name "*.pyc" |xargs rm
+	rm dist/gsTiles-*.tar.gz
+dist: clean setup.py
+	python setup.py sdist
+	twine upload dist/*
