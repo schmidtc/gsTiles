@@ -1,7 +1,5 @@
 import time
 import rtree
-from simple import simple
-
 
 class BBoxLocator(object):
     """
@@ -31,18 +29,14 @@ class BBoxLocator(object):
     @property
     def extent(self):
         return self.source.bbox
-    def overlapping(self,rect, zoom=-1):
+    def overlapping(self,rect, approx=True):
+        if approx==False:
+            raise NotImplementedError
         # prevents a memory leak...
         # rtree doesn't release the memory until we've 
         # accessed all elements in the generator
         offsets = list(self.idx.intersection(rect))
-        s = self.source
-        if zoom > -1:
-            for o in offsets:
-                yield o,simple(s.get(o), zoom)
-        else:
-            for o in offsets:
-                yield o,s.get(o)
+        return offsets
 
 if __name__=='__main__':
     import time

@@ -82,7 +82,10 @@ def renderTile(tx, ty, zoom, polygons, borders = True, width = 256, height = 256
     ctx2 = getContext(bsurface, tx, ty, zoom)
     simple_level = zoom if zoom < 10 else -1
     extents = ctx.clip_extents()
-    for pid,polygon in polygons.overlapping(extents, simple_level):
+    for pid in polygons.overlapping(extents):
+        polygon = polygons.source.get(pid)
+        if simple_level > -1:
+            polygon = simple(polygon, zoom)
         drawPoly(ctx, ctx2, polygon, pid)
     #if borders:
     #    for width in range(10,0,-1):

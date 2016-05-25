@@ -78,7 +78,7 @@ class TileDB:
     def addTile(self, x, y, z, typ, dat, border):
         q = "insert into tiles (zoom, x, y, typ, data, borders) values (?, ?, ?, ?, ?, ?);"
         self.cur.execute(q, (z,x,y,typ,buffer(dat),buffer(border)))
-        #self.conn.commit()
+        self.conn.commit()
     def getTile(self, x, y, z):
         q = "select typ,data,borders from tiles where zoom=? and x=? and y=? limit 1;"
         res = self.cur.execute(q, (z,x,y)).fetchone()
