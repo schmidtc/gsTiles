@@ -18,7 +18,7 @@ HEADERSTRUCT = numpy.dtype([ # Starts At
     ('Zrng', '<f8', 2),      # Byte 68
     ('Mrng', '<f8', 2)       # Byte 84
 ])
-POLYGON_HEADER = numpy.dtype([('Shape Type','<i4'),('bbox','<4d8'),('NumParts','<i4'),('NumPoints','<i4')])
+POLYGON_HEADER = numpy.dtype([('Shape Type','<i4'),('bbox','<4f8'),('NumParts','<i4'),('NumPoints','<i4')])
 i2s = lambda i: numpy.array([i],  '<i4').tostring()
 NULL = i2s(0)
 
@@ -215,7 +215,7 @@ class shapeFile(object):
         self.size = (pidx['NumParts']*4 + pidx['NumPoints']*16).tolist()
         self.ptype = numpy.dtype('uint8,2float')
         self.pt = numpy.dtype('<i4')
-        self.vt = numpy.dtype('<2d8')
+        self.vt = numpy.dtype('<2f8')
         s = pidx['NumPoints'].tostring()
         self.npts = [s[i:i+4] for i in xrange(0,len(s),4)]
         self.nprts = pidx['NumParts'].tolist()
